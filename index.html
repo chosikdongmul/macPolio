@@ -593,7 +593,7 @@
     }
   </style>
 </head>
-<body>
+<body onload="init()">
 <div id="desktop">
 
   <!-- 메뉴바 -->
@@ -841,25 +841,34 @@ const CONTENT = {
 };
 
 /* ═══════════════════════════════════════════
-   어드민 localStorage 데이터로 CONTENT 오버라이드
+   콘텐츠 로드
+   1순위: data/content.json (GitHub Pages)
+   2순위: localStorage portfolio_data (로컬 어드민)
    ═══════════════════════════════════════════ */
-(function() {
+async function loadContentData() {
+  // 1. content.json fetch 시도 (서버/GitHub Pages 환경)
+  try {
+    const res = await fetch('./data/content.json');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.projects) CONTENT.projects = data.projects;
+      if (data.owner)    Object.assign(CONTENT.owner, data.owner);
+      if (data.categories) CONTENT.categories = data.categories;
+      return;
+    }
+  } catch(e) { /* file:// 로컬 환경 — 폴백으로 진행 */ }
+
+  // 2. localStorage 폴백 (로컬 어드민 저장 데이터)
   try {
     const saved = localStorage.getItem('portfolio_data');
     if (saved) {
       const data = JSON.parse(saved);
-      if (data.projects && Array.isArray(data.projects)) {
-        CONTENT.projects = data.projects;
-      }
-      if (data.owner) {
-        Object.assign(CONTENT.owner, data.owner);
-      }
-      if (data.categories && Array.isArray(data.categories)) {
-        CONTENT.categories = data.categories;
-      }
+      if (data.projects) CONTENT.projects = data.projects;
+      if (data.owner)    Object.assign(CONTENT.owner, data.owner);
+      if (data.categories) CONTENT.categories = data.categories;
     }
   } catch(e) { console.warn('portfolio_data 로드 실패:', e); }
-})();
+}
 
 /* ═══════════════════════════════════════════
    상태
@@ -1251,7 +1260,8 @@ function ctxAct(action) {
   if (action === 'admin')      window.open('admin.html', '_blank');
 }
 
-function init() {
+async function init() {
+  await loadContentData();
   document.getElementById('menu-name').textContent = CONTENT.owner.name;
   loadIconPositions();
   startClock();
