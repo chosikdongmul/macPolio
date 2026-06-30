@@ -11,12 +11,12 @@
   "projects": [
     {
       "id": "project-01",
-      "title": "테스틍",
+      "title": "Dodo Pizza",
       "category": "브랜딩",
-      "thumbnail": "images/project-01/01.jpg",
+      "thumbnail": "https://lh3.googleusercontent.com/d/1Zt0964jUYqmQfux72cqFTNKVVj5EzHXB",
       "description": "도도 피자의 새로운 브랜드 아이덴티티를 담은 비주얼 캠페인.",
       "photos": [
-        "images/project-01/01.jpg"
+        "https://lh3.googleusercontent.com/d/1Zt0964jUYqmQfux72cqFTNKVVj5EzHXB"
       ],
       "year": 2024,
       "position": {
