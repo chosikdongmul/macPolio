@@ -1,0 +1,2751 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --win-bg:    rgba(30,30,30,0.92);
+      --win-border:rgba(255,255,255,0.12);
+      --win-text:  rgba(255,255,255,0.85);
+      --win-sub:   rgba(255,255,255,0.45);
+      --win-divider:rgba(255,255,255,0.07);
+      --menubar-bg:rgba(0,0,0,0.5);
+      --dock-bg:   rgba(255,255,255,0.1);
+      --dock-border:rgba(255,255,255,0.18);
+    }
+    body.light-mode {
+      --win-bg:    rgba(245,245,247,0.96);
+      --win-border:rgba(0,0,0,0.1);
+      --win-text:  rgba(0,0,0,0.85);
+      --win-sub:   rgba(0,0,0,0.45);
+      --win-divider:rgba(0,0,0,0.08);
+      --menubar-bg:rgba(235,235,240,0.85);
+      --dock-bg:   rgba(255,255,255,0.55);
+      --dock-border:rgba(0,0,0,0.12);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', Inter, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+    #desktop {
+      width: 100vw; height: 100vh; position: relative; overflow: hidden;
+      background: radial-gradient(ellipse at 60% 40%, #2a2a35 0%, #1a1a1a 60%, #0d0d0d 100%);
+    }
+    /* ── 메뉴바 ── */
+    #menubar {
+      position: absolute; top: 0; left: 0; right: 0; height: 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px; z-index: 100;
+      background: var(--menubar-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.9); font-size: 13px;
+    }
+    #menubar .left { font-weight: 600; letter-spacing: 0.02em; }
+    #menubar .right { color: rgba(255,255,255,0.65); font-size: 12px; }
+
+    /* ── 폴더 아이콘 ── */
+    .folder-item {
+      position: absolute;
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      width: 90px; cursor: default;
+      transform: translate(-50%, -50%);
+      transition: none;
+    }
+    .folder-item:hover .folder-icon-wrap { transform: scale(1.1); }
+    .folder-icon-wrap {
+      width: 72px; height: 58px;
+      transition: transform 0.15s cubic-bezier(0.34,1.3,0.64,1);
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+    }
+    .folder-item.selected .folder-icon-wrap { transform: scale(1.05); }
+    .folder-label {
+      color: white; font-size: 11px; text-align: center;
+      line-height: 1.3; padding: 2px 4px; border-radius: 3px;
+      max-width: 90px; word-break: keep-all;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+      transition: background 0.1s;
+    }
+    .folder-item.selected .folder-label,
+    .folder-item:focus .folder-label {
+      background: rgba(69,130,230,0.85);
+      text-shadow: none;
+    }
+
+    /* ── 창 시스템 ── */
+    .window {
+      position: absolute;
+      background: var(--win-bg);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--win-border);
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 0.5px rgba(255,255,255,0.05);
+      min-width: 420px; min-height: 300px;
+      animation: windowOpen 0.18s cubic-bezier(0.34,1.1,0.64,1) forwards;
+      overflow: hidden;
+      color: var(--win-text);
+    }
+    @keyframes windowOpen {
+      from { opacity: 0; transform: scale(0.88); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .window-titlebar {
+      height: 40px; display: flex; align-items: center; gap: 8px;
+      padding: 0 14px; cursor: move;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+    .traffic-btn {
+      width: 12px; height: 12px; border-radius: 50%; cursor: pointer;
+      border: none; padding: 0; flex-shrink: 0;
+      transition: filter 0.1s;
+    }
+    .traffic-btn:hover { filter: brightness(1.2); }
+    .btn-close { background: #ff5f57; }
+    .btn-min   { background: #febc2e; }
+    .btn-max   { background: #28c840; }
+    .window-title {
+      flex: 1; text-align: center; color: rgba(255,255,255,0.7);
+      font-size: 13px; font-weight: 500; margin-right: 52px;
+      pointer-events: none;
+    }
+    .window-body {
+      overflow-y: auto;
+      color: rgba(255,255,255,0.85); font-size: 13px;
+      height: calc(100% - 40px);
+      display: flex; flex-direction: column;
+    }
+    /* ── 프로젝트 창 레이아웃 ── */
+    .proj-cover {
+      width: 100%; height: 180px; object-fit: cover;
+      display: block; flex-shrink: 0;
+      background: rgba(255,255,255,0.04);
+    }
+    .proj-cover-placeholder {
+      width: 100%; height: 140px; flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; opacity: 0.4; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .proj-info {
+      padding: 16px 20px 0;
+    }
+    .proj-header {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+    }
+    .proj-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .meta-tag {
+      background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.55);
+      font-size: 11px; padding: 3px 9px; border-radius: 10px; white-space: nowrap;
+    }
+    .meta-tag.cat {
+      background: rgba(69,130,230,0.18); color: rgba(100,160,255,0.9);
+    }
+    .proj-link-btn {
+      flex-shrink: 0;
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 11px; border-radius: 8px; font-size: 11px;
+      background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.55);
+      text-decoration: none; border: 1px solid rgba(255,255,255,0.1);
+      transition: background 0.15s, color 0.15s;
+      cursor: pointer;
+    }
+    .proj-link-btn:hover { background: rgba(69,130,230,0.25); color: rgba(120,180,255,1); }
+    .project-desc {
+      color: rgba(255,255,255,0.5); font-size: 12.5px;
+      line-height: 1.65; margin-top: 10px;
+    }
+    .proj-divider {
+      height: 1px; background: rgba(255,255,255,0.07);
+      margin: 14px 20px 0;
+    }
+    .proj-gallery-label {
+      padding: 10px 20px 6px; font-size: 10px;
+      color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    /* 갤러리 그리드 */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 8px; padding: 0 20px 20px;
+    }
+    .photo-thumb {
+      aspect-ratio: 4/3; border-radius: 6px; overflow: hidden;
+      background: rgba(255,255,255,0.06); cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .photo-thumb:hover { transform: scale(1.03); opacity: 0.9; }
+    .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-placeholder {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.2); font-size: 11px;
+    }
+
+    /* ── 라이트박스 (Quick Look 스타일) ── */
+    #lightbox {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0); backdrop-filter: blur(0px);
+      align-items: center; justify-content: center; flex-direction: column;
+      transition: background 0.2s, backdrop-filter 0.2s;
+    }
+    #lightbox.active {
+      display: flex;
+      background: rgba(0,0,0,0.82);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    #lb-img-wrap {
+      position: relative;
+      transform: scale(0.88); opacity: 0;
+      transition: transform 0.22s cubic-bezier(0.34,1.1,0.64,1), opacity 0.18s;
+      max-width: 88vw; max-height: 82vh;
+    }
+    #lightbox.active #lb-img-wrap { transform: scale(1); opacity: 1; }
+    #lb-img {
+      display: block; max-width: 88vw; max-height: 82vh;
+      border-radius: 10px; box-shadow: 0 32px 80px rgba(0,0,0,0.9);
+      object-fit: contain;
+    }
+    #lb-placeholder {
+      display: none; width: 400px; height: 300px; border-radius: 10px;
+      background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.15);
+      align-items: center; justify-content: center; flex-direction: column; gap: 10px;
+      color: rgba(255,255,255,0.35); font-size: 13px;
+    }
+    #lb-placeholder .lb-ph-icon { font-size: 36px; }
+    #lb-counter {
+      margin-top: 14px; color: rgba(255,255,255,0.45); font-size: 12px;
+      letter-spacing: 0.05em;
+    }
+    .lb-nav {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 50%; width: 44px; height: 44px; color: white; font-size: 22px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s; backdrop-filter: blur(8px);
+    }
+    .lb-nav:hover { background: rgba(255,255,255,0.2); }
+    .lb-nav.hidden { opacity: 0; pointer-events: none; }
+    #lb-prev { left: 28px; }
+    #lb-next { right: 28px; }
+    #lb-close {
+      position: absolute; top: 18px; right: 24px;
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 50%; width: 32px; height: 32px;
+      color: rgba(255,255,255,0.7); font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s; backdrop-filter: blur(8px);
+    }
+    #lb-close:hover { background: rgba(255,255,255,0.2); color: white; }
+
+    /* ── Dock ── */
+    #dock {
+      position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: flex-end; gap: 10px;
+      padding: 8px 14px 8px;
+      background: var(--dock-bg);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--dock-border);
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+      z-index: 90;
+    }
+    .dock-icon-wrap {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      cursor: pointer; position: relative;
+    }
+    .dock-icon-img {
+      width: 52px; height: 52px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; transition: transform 0.15s cubic-bezier(0.34,1.3,0.64,1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .dock-icon-wrap:hover .dock-icon-img { transform: translateY(-10px) scale(1.25); }
+    .dock-icon-wrap:hover .dock-label { opacity: 1; transform: translateY(-4px); }
+    .dock-label {
+      position: absolute; bottom: 68px; white-space: nowrap;
+      background: rgba(0,0,0,0.75); color: white; font-size: 11px;
+      padding: 2px 8px; border-radius: 5px; pointer-events: none;
+      opacity: 0; transform: translateY(0); transition: opacity 0.15s, transform 0.15s;
+    }
+    .dock-sep {
+      width: 1px; height: 44px; background: rgba(255,255,255,0.2);
+      margin: 0 2px; align-self: center;
+    }
+
+    /* ── Dock 최소화 미니 아이콘 ── */
+    .dock-mini-win {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      cursor: pointer; position: relative;
+      animation: dockMiniIn 0.25s cubic-bezier(0.34,1.3,0.64,1) forwards;
+    }
+    @keyframes dockMiniIn {
+      from { opacity: 0; transform: scale(0.4) translateY(10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .dock-mini-img {
+      width: 44px; height: 44px; border-radius: 8px;
+      background: rgba(30,30,30,0.95);
+      border: 1px solid rgba(255,255,255,0.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      transition: transform 0.15s cubic-bezier(0.34,1.3,0.64,1);
+      position: relative;
+    }
+    .dock-mini-win:hover .dock-mini-img { transform: translateY(-10px) scale(1.25); }
+    .dock-mini-win:hover .dock-mini-label { opacity: 1; transform: translateY(-4px); }
+    .dock-mini-img::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 60%);
+    }
+    .dock-mini-label {
+      position: absolute; bottom: 60px; white-space: nowrap;
+      background: rgba(0,0,0,0.75); color: white; font-size: 11px;
+      padding: 2px 8px; border-radius: 5px; pointer-events: none;
+      opacity: 0; transform: translateY(0); transition: opacity 0.15s, transform 0.15s;
+    }
+    /* Dock 구분선 (최소화 섹션) */
+    #dock-min-sep { display: none; }
+    #dock-min-sep.has-items { display: block; }
+
+    /* ── 스크롤바 ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 3px; }
+
+    /* ── Spotlight 검색 ── */
+    #spotlight-overlay {
+      display: none; position: fixed; inset: 0; z-index: 8000;
+      background: rgba(0,0,0,0.45); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      align-items: flex-start; justify-content: center;
+      padding-top: 18vh;
+    }
+    #spotlight-overlay.open { display: flex; }
+    #spotlight-box {
+      width: 620px; max-width: 92vw;
+      background: rgba(32,32,36,0.96); backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 14px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.8), 0 0 0 0.5px rgba(255,255,255,0.08);
+      overflow: hidden;
+      animation: spotOpen 0.18s cubic-bezier(0.34,1.1,0.64,1) forwards;
+    }
+    @keyframes spotOpen {
+      from { opacity: 0; transform: scale(0.94) translateY(-8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    #spotlight-input-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    #spotlight-icon { font-size: 18px; opacity: 0.4; flex-shrink: 0; }
+    #spotlight-input {
+      flex: 1; background: transparent; border: none; outline: none;
+      color: white; font-size: 18px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      caret-color: #4da3e8;
+    }
+    #spotlight-input::placeholder { color: rgba(255,255,255,0.25); }
+    #spotlight-clear {
+      font-size: 13px; color: rgba(255,255,255,0.3); cursor: pointer;
+      padding: 2px 6px; border-radius: 4px; display: none;
+      transition: color 0.1s;
+    }
+    #spotlight-clear.visible { display: block; }
+    #spotlight-clear:hover { color: rgba(255,255,255,0.7); }
+    #spotlight-results { max-height: 360px; overflow-y: auto; }
+    .spot-section-label {
+      padding: 8px 18px 4px; font-size: 10px;
+      color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .spot-result {
+      display: flex; align-items: center; gap: 12px;
+      padding: 9px 18px; cursor: pointer;
+      transition: background 0.08s;
+    }
+    .spot-result:hover, .spot-result.active {
+      background: rgba(69,130,230,0.75);
+    }
+    .spot-result:hover .spot-meta, .spot-result.active .spot-meta {
+      color: rgba(255,255,255,0.7);
+    }
+    .spot-icon {
+      width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; background: rgba(255,255,255,0.07);
+      overflow: hidden;
+    }
+    .spot-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .spot-info { flex: 1; min-width: 0; }
+    .spot-title { color: white; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .spot-meta  { color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 1px; }
+    .spot-empty {
+      padding: 24px 18px; text-align: center;
+      color: rgba(255,255,255,0.25); font-size: 13px;
+    }
+    #spotlight-footer {
+      padding: 8px 18px; border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex; gap: 16px;
+      color: rgba(255,255,255,0.22); font-size: 11px;
+    }
+    .spot-hint { display: flex; align-items: center; gap: 4px; }
+    .spot-key {
+      background: rgba(255,255,255,0.08); border-radius: 4px;
+      padding: 1px 5px; font-size: 10px; font-family: monospace;
+    }
+
+    /* ── 폴더 hover 프리뷰 ── */
+    .folder-preview {
+      position: absolute; bottom: calc(100% + 10px); left: 50%;
+      transform: translateX(-50%) scale(0.92);
+      width: 160px;
+      background: rgba(28,28,28,0.95); backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      overflow: hidden; pointer-events: none;
+      opacity: 0; transition: opacity 0.15s, transform 0.15s;
+      z-index: 50;
+    }
+    .folder-item:hover .folder-preview {
+      opacity: 1; transform: translateX(-50%) scale(1);
+    }
+    .folder-preview-img {
+      width: 100%; height: 90px; object-fit: cover; display: block;
+    }
+    .folder-preview-placeholder {
+      width: 100%; height: 90px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; background: rgba(255,255,255,0.04);
+    }
+    .folder-preview-info {
+      padding: 7px 10px 8px;
+    }
+    .folder-preview-title {
+      font-size: 11px; font-weight: 600; color: white;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .folder-preview-meta {
+      font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px;
+    }
+    /* 말풍선 꼬리 */
+    .folder-preview::after {
+      content: ''; position: absolute; top: 100%; left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: rgba(28,28,28,0.95);
+    }
+
+    /* ── 창 내 내비게이션 ── */
+    .win-nav-btn {
+      width: 24px; height: 24px; border-radius: 6px; border: none;
+      background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5);
+      font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.1s, color 0.1s; flex-shrink: 0;
+    }
+    .win-nav-btn:hover:not(:disabled) { background: rgba(255,255,255,0.15); color: white; }
+    .win-nav-btn:disabled { opacity: 0.2; cursor: default; }
+    .win-nav-group { display: flex; gap: 4px; margin-left: auto; }
+    .win-nav-counter { font-size: 10px; color: rgba(255,255,255,0.25); align-self: center; white-space: nowrap; }
+    .proj-body-wrap { display: contents; }
+    @keyframes projSlideIn {
+      from { opacity: 0; transform: translateX(18px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes projSlideInL {
+      from { opacity: 0; transform: translateX(-18px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .proj-body-anim-r { animation: projSlideIn  0.18s ease-out; }
+    .proj-body-anim-l { animation: projSlideInL 0.18s ease-out; }
+
+
+    /* ── 배경화면 색상 팔레트 ── */
+    #wallpaper-picker {
+      display: none; position: fixed; z-index: 300;
+      background: rgba(28,28,28,0.94); backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.65);
+      padding: 10px 12px;
+      animation: menuOpen 0.12s ease-out forwards;
+      transform-origin: bottom center;
+    }
+    #wallpaper-picker.open { display: block; }
+    #wallpaper-picker-inner {
+      display: flex; gap: 8px; align-items: center;
+    }
+    .wp-swatch {
+      width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.15s, border-color 0.15s;
+      position: relative;
+    }
+    .wp-swatch:hover { transform: scale(1.15); }
+    .wp-swatch.active { border-color: white; }
+    .wp-swatch-label {
+      position: absolute; bottom: calc(100% + 6px); left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.75); color: white; font-size: 10px;
+      padding: 2px 6px; border-radius: 4px; white-space: nowrap;
+      opacity: 0; pointer-events: none; transition: opacity 0.1s;
+    }
+    .wp-swatch:hover .wp-swatch-label { opacity: 1; }
+
+    /* ── 우클릭 컨텍스트 메뉴 ── */
+    #ctx-menu {
+      display: none; position: fixed; z-index: 9000;
+      background: rgba(28,28,28,0.94); backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.06);
+      min-width: 210px; overflow: hidden;
+      animation: ctxOpen 0.1s ease-out forwards;
+      transform-origin: top left;
+    }
+    #ctx-menu.open { display: block; }
+    @keyframes ctxOpen {
+      from { opacity: 0; transform: scale(0.94); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .ctx-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 14px; font-size: 13px;
+      color: rgba(255,255,255,0.8); cursor: pointer;
+      transition: background 0.08s;
+    }
+    .ctx-item:hover { background: rgba(69,130,230,0.75); color: white; }
+    .ctx-item.disabled { color: rgba(255,255,255,0.25); cursor: default; }
+    .ctx-item.disabled:hover { background: transparent; }
+    .ctx-item .ci-icon { width: 16px; text-align: center; font-size: 13px; }
+    .ctx-item .ci-shortcut { margin-left: auto; font-size: 11px; color: rgba(255,255,255,0.3); }
+    .ctx-item:hover .ci-shortcut { color: rgba(255,255,255,0.6); }
+    .ctx-sep {
+      height: 1px; background: rgba(255,255,255,0.08); margin: 3px 0;
+    }
+    .ctx-label {
+      padding: 5px 14px 2px; font-size: 10px;
+      color: rgba(255,255,255,0.28); text-transform: uppercase; letter-spacing: 0.08em;
+    }
+
+    /* ── 창 리사이즈 핸들 ── */
+    .window-resize-handle {
+      position: absolute; bottom: 0; right: 0;
+      width: 18px; height: 18px; cursor: nwse-resize;
+      opacity: 0.3; transition: opacity 0.15s;
+      /* 사선 눈금 패턴 */
+      background: linear-gradient(
+        -45deg,
+        transparent 30%, rgba(255,255,255,0.6) 30%, rgba(255,255,255,0.6) 40%,
+        transparent 40%, transparent 55%, rgba(255,255,255,0.6) 55%, rgba(255,255,255,0.6) 65%,
+        transparent 65%, transparent 80%, rgba(255,255,255,0.6) 80%, rgba(255,255,255,0.6) 90%,
+        transparent 90%
+      );
+    }
+    .window:hover .window-resize-handle { opacity: 0.55; }
+
+    /* ── 설정 메뉴 ── */
+    #settings-menu {
+      display: none; position: fixed;
+      background: rgba(28,28,28,0.92); backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px; z-index: 200;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      min-width: 200px; overflow: hidden;
+      animation: menuOpen 0.12s ease-out forwards;
+      transform-origin: bottom center;
+    }
+    #settings-menu.open { display: block; }
+    @keyframes menuOpen {
+      from { opacity: 0; transform: scale(0.95) translateY(6px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .settings-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px; font-size: 13px;
+      color: rgba(255,255,255,0.75); cursor: pointer;
+      transition: background 0.1s;
+    }
+    .settings-item:hover { background: rgba(255,255,255,0.08); color: white; }
+    .settings-item .si-icon { width: 18px; text-align: center; font-size: 14px; }
+    .settings-sep {
+      height: 1px; background: rgba(255,255,255,0.08); margin: 3px 0;
+    }
+    .settings-label {
+      padding: 6px 14px 2px; font-size: 10px;
+      color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.08em;
+    }
+  </style>
+</head>
+<body>
+<div id="desktop">
+
+  <!-- 메뉴바 -->
+  <div id="menubar">
+    <div class="left" id="menu-name">Portfolio</div>
+    <div class="right" id="menu-clock"></div>
+  </div>
+
+  <!-- 설정 드롭업 메뉴 (Dock 위로 열림) -->
+  <div id="settings-menu">
+    <div class="settings-label">데스크탑</div>
+    <div class="settings-item" onclick="resetIconPositions(); closeSettings();">
+      <span class="si-icon">↺</span> 폴더 위치 초기화
+    </div>
+    <div class="settings-item" onclick="cycleWallpaper(); closeSettings();">
+      <span class="si-icon">🖼</span> 배경화면 변경
+    </div>
+    <div class="settings-sep"></div>
+    <div class="settings-label">창</div>
+    <div class="settings-item" onclick="closeAllWindows(); closeSettings();">
+      <span class="si-icon">✕</span> 모든 창 닫기
+    </div>
+    <div class="settings-sep"></div>
+    <div class="settings-label">도구</div>
+    <div class="settings-item" onclick="closeSettings(); openBreakout();">
+      <span class="si-icon">🕹</span> Breakout 게임
+    </div>
+    <div class="settings-item" onclick="closeSettings(); openAppleGame();">
+      <span class="si-icon">🍎</span> 사과게임
+    </div>
+    <div class="settings-sep"></div>
+    <div class="settings-label">테마</div>
+    <div class="settings-item" id="theme-toggle-item" onclick="toggleTheme(); closeSettings();">
+      <span class="si-icon">🌓</span><span> 라이트 모드</span>
+    </div>
+    <div class="settings-sep"></div>
+    <div class="settings-item" onclick="closeSettings(); window.open('admin.html','_blank');">
+      <span class="si-icon">🔧</span> 어드민 패널
+    </div>
+  </div>
+
+  <!-- 폴더 아이콘 컨테이너 -->
+  <div id="icon-layer" style="position:absolute;inset:0;top:28px;"></div>
+
+  <!-- 창 컨테이너 -->
+  <div id="window-layer" style="position:absolute;inset:0;top:28px;pointer-events:none;"></div>
+
+  <!-- Dock -->
+  <div id="dock">
+    <div class="dock-icon-wrap" onclick="openFinder()">
+      <div class="dock-label">Finder</div>
+      <div class="dock-icon-img" style="background:linear-gradient(135deg,#1a73e8,#34a8f5);font-size:26px;">🗂️</div>
+    </div>
+    <div class="dock-sep"></div>
+    <div class="dock-icon-wrap" onclick="openAbout()">
+      <div class="dock-label">About Me</div>
+      <div class="dock-icon-img" style="background:linear-gradient(135deg,#667eea,#764ba2);">👤</div>
+    </div>
+    <div class="dock-icon-wrap" onclick="openContact()">
+      <div class="dock-label">Contact</div>
+      <div class="dock-icon-img" style="background:linear-gradient(135deg,#11998e,#38ef7d);">✉️</div>
+    </div>
+    <div class="dock-sep"></div>
+    <!-- 배경화면 버튼 (호버 시 색상 팔레트 표시) -->
+    <div class="dock-icon-wrap" id="dock-wallpaper-btn"
+         onmouseenter="showWallpaperPicker()" onmouseleave="scheduleHideWallpaperPicker()">
+      <div class="dock-label">배경화면</div>
+      <div class="dock-icon-img" style="background:linear-gradient(135deg,#232526,#414345);font-size:26px;">🌄</div>
+    </div>
+    <div class="dock-sep"></div>
+    <div class="dock-icon-wrap" id="dock-settings-btn" onclick="toggleSettings(event)">
+      <div class="dock-label">설정</div>
+      <div class="dock-icon-img" style="background:linear-gradient(135deg,#3a3a3a,#555);font-size:26px;">⚙️</div>
+    </div>
+    <!-- 최소화된 창 구분선 + 아이콘 영역 (항목 생길 때만 보임) -->
+    <div class="dock-sep" id="dock-min-sep"></div>
+  </div>
+
+</div>
+
+<!-- 배경화면 색상 팔레트 -->
+<div id="wallpaper-picker"
+     onmouseenter="cancelHideWallpaperPicker()" onmouseleave="scheduleHideWallpaperPicker()">
+  <div id="wallpaper-picker-inner"></div>
+</div>
+
+<!-- 우클릭 컨텍스트 메뉴 -->
+<div id="ctx-menu">
+  <div class="ctx-label">데스크탑</div>
+  <div class="ctx-item" onclick="ctxAct('wallpaper')">
+    <span class="ci-icon">🖼</span> 배경화면 변경
+  </div>
+  <div class="ctx-item" onclick="ctxAct('reset-pos')">
+    <span class="ci-icon">↺</span> 폴더 위치 초기화
+  </div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-label">창</div>
+  <div class="ctx-item" onclick="ctxAct('close-all')">
+    <span class="ci-icon">✕</span> 모든 창 닫기
+  </div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="ctxAct('about')">
+    <span class="ci-icon">👤</span> About Me <span class="ci-shortcut">⌘A</span>
+  </div>
+  <div class="ctx-item" onclick="ctxAct('contact')">
+    <span class="ci-icon">✉️</span> Contact <span class="ci-shortcut">⌘C</span>
+  </div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="ctxAct('admin')">
+    <span class="ci-icon">🔧</span> 어드민 패널
+  </div>
+</div>
+
+<!-- Spotlight 검색 -->
+<div id="spotlight-overlay" onclick="e => { if(e.target===document.getElementById('spotlight-overlay')) closeSpotlight(); }">
+  <div id="spotlight-box">
+    <div id="spotlight-input-row">
+      <div id="spotlight-icon">🔍</div>
+      <input id="spotlight-input" type="text" placeholder="프로젝트 검색..." autocomplete="off" />
+      <div id="spotlight-clear" onclick="clearSpotlight()">✕</div>
+    </div>
+    <div id="spotlight-results"></div>
+    <div id="spotlight-footer">
+      <div class="spot-hint"><span class="spot-key">↑↓</span> 선택</div>
+      <div class="spot-hint"><span class="spot-key">↵</span> 열기</div>
+      <div class="spot-hint"><span class="spot-key">Esc</span> 닫기</div>
+    </div>
+  </div>
+</div>
+
+<!-- 라이트박스 -->
+<div id="lightbox" onclick="if(event.target===this) closeLightbox();">
+  <button id="lb-close" onclick="closeLightbox()">✕</button>
+  <button class="lb-nav" id="lb-prev" onclick="lbMove(-1)">‹</button>
+  <div id="lb-img-wrap">
+    <img id="lb-img" src="" alt="" />
+    <div id="lb-placeholder">
+      <div class="lb-ph-icon">🖼️</div>
+      <div>이미지를 추가하면 여기에 표시됩니다</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.2);">어드민에서 사진 경로를 입력하세요</div>
+    </div>
+  </div>
+  <div id="lb-counter"></div>
+  <button class="lb-nav" id="lb-next" onclick="lbMove(1)">›</button>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   데이터 — content.json 내용을 여기에 인라인
+   나중에 fetch('./data/content.json')으로 교체 가능
+   ═══════════════════════════════════════════ */
+const CONTENT = {
+  owner: {
+    name: "홍길동",
+    bio: "사진작가 / 비주얼 디렉터",
+    contact: {
+      email: "hello@example.com",
+      instagram: "https://instagram.com/username",
+      behance: "https://behance.net/username"
+    }
+  },
+  projects: [
+    {
+      id: "project-01",
+      title: "Dodo Pizza",
+      category: "브랜딩",
+      thumbnail: "",
+      description: "도도 피자의 새로운 브랜드 아이덴티티를 담은 비주얼 캠페인. 생동감 있는 색감과 독창적인 캐릭터로 브랜드 세계관을 구축했습니다.",
+      photos: [],
+      year: 2024,
+      position: { x: 540, y: 160 }
+    },
+    {
+      id: "project-02",
+      title: "Visamie",
+      category: "광고",
+      thumbnail: "",
+      description: "글로벌 비자 서비스 플랫폼 Visamie의 광고 캠페인. 신뢰와 속도를 시각적으로 표현했습니다.",
+      photos: [],
+      year: 2024,
+      position: { x: 240, y: 220 }
+    },
+    {
+      id: "project-03",
+      title: "Logofolio",
+      category: "브랜딩",
+      thumbnail: "",
+      description: "다양한 클라이언트를 위해 제작한 로고 컬렉션. 각 브랜드의 본질을 간결한 형태로 담았습니다.",
+      photos: [],
+      year: 2023,
+      position: { x: 880, y: 190 }
+    },
+    {
+      id: "project-04",
+      title: "DALA CAMP",
+      category: "포트레이트",
+      thumbnail: "",
+      description: "야외 캠핑 브랜드 DALA CAMP의 라이프스타일 포트레이트 시리즈.",
+      photos: [],
+      year: 2023,
+      position: { x: 200, y: 510 }
+    },
+    {
+      id: "project-05",
+      title: "Megacampus",
+      category: "공간",
+      thumbnail: "",
+      description: "교육 플랫폼 메가캠퍼스의 공간 촬영 프로젝트. 학습 환경의 역동성을 포착했습니다.",
+      photos: [],
+      year: 2024,
+      position: { x: 540, y: 500 }
+    },
+    {
+      id: "project-06",
+      title: "Geely × Major",
+      category: "광고",
+      thumbnail: "",
+      description: "지리 자동차와 메이저 콜라보레이션 광고 캠페인.",
+      photos: [],
+      year: 2024,
+      position: { x: 880, y: 470 }
+    },
+    {
+      id: "project-07",
+      title: "Skin.Club",
+      category: "브랜딩",
+      thumbnail: "",
+      description: "게이밍 스킨 플랫폼 Skin.Club의 비주얼 아이덴티티 프로젝트.",
+      photos: [],
+      year: 2024,
+      position: { x: 1160, y: 310 }
+    },
+    {
+      id: "project-08",
+      title: "DFC",
+      category: "광고",
+      thumbnail: "",
+      description: "DFC 브랜드 광고 캠페인.",
+      photos: [],
+      year: 2023,
+      position: { x: 380, y: 380 }
+    }
+  ],
+  categories: ["브랜딩", "광고", "포트레이트", "공간"]
+};
+
+/* ═══════════════════════════════════════════
+   어드민 localStorage 데이터로 CONTENT 오버라이드
+   ═══════════════════════════════════════════ */
+(function() {
+  try {
+    const saved = localStorage.getItem('portfolio_data');
+    if (saved) {
+      const data = JSON.parse(saved);
+      if (data.projects && Array.isArray(data.projects)) {
+        CONTENT.projects = data.projects;
+      }
+      if (data.owner) {
+        Object.assign(CONTENT.owner, data.owner);
+      }
+      if (data.categories && Array.isArray(data.categories)) {
+        CONTENT.categories = data.categories;
+      }
+    }
+  } catch(e) { console.warn('portfolio_data 로드 실패:', e); }
+})();
+
+/* ═══════════════════════════════════════════
+   상태
+   ═══════════════════════════════════════════ */
+let windows = {};        // id → { el, zIndex }
+let topZ = 10;
+let activeFilter = null;   // 카테고리
+let activeYear   = null;   // 연도
+let lbPhotos = [], lbIndex = 0;
+let selectedId = null;
+
+/* ═══════════════════════════════════════════
+   초기화
+   ═══════════════════════════════════════════ */
+/* 아이콘 위치 localStorage 키 */
+const POS_KEY = 'portfolio_icon_positions';
+
+function saveIconPositions() {
+  const pos = {};
+  CONTENT.projects.forEach(p => { pos[p.id] = { x: p.position.x, y: p.position.y }; });
+  localStorage.setItem(POS_KEY, JSON.stringify(pos));
+}
+
+function loadIconPositions() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(POS_KEY) || '{}');
+    CONTENT.projects.forEach(p => {
+      if (saved[p.id]) { p.position.x = saved[p.id].x; p.position.y = saved[p.id].y; }
+    });
+  } catch {}
+}
+
+/* 기본 폴더 위치 스냅샷 (CONTENT 로드 직후, localStorage 덮어쓰기 전) */
+const DEFAULT_POSITIONS = {};
+CONTENT.projects.forEach(p => { DEFAULT_POSITIONS[p.id] = { x: p.position.x, y: p.position.y }; });
+
+/* ═══════════════════════════════════════════
+   설정 메뉴
+   ═══════════════════════════════════════════ */
+function toggleSettings(e) {
+  e.stopPropagation();
+  const m = document.getElementById('settings-menu');
+  if (m.classList.contains('open')) {
+    closeSettings();
+    return;
+  }
+  // Dock 버튼 기준으로 위치 계산
+  const btn = document.getElementById('dock-settings-btn');
+  const r = btn.getBoundingClientRect();
+  m.classList.add('open');
+  // 일단 표시 후 크기 계산
+  requestAnimationFrame(() => {
+    const mW = m.offsetWidth;
+    const left = Math.min(r.left + r.width / 2 - mW / 2, window.innerWidth - mW - 8);
+    m.style.left = Math.max(8, left) + 'px';
+    m.style.bottom = (window.innerHeight - r.top + 8) + 'px';
+    m.style.top = 'auto';
+  });
+  setTimeout(() => document.addEventListener('click', closeSettings, { once: true }), 0);
+}
+
+function closeSettings() {
+  document.getElementById('settings-menu').classList.remove('open');
+}
+
+/* 배경화면 */
+const WALLPAPERS = [
+  { name: '다크',       bg: 'radial-gradient(ellipse at 60% 40%, #2a2a35 0%, #1a1a1a 60%, #0d0d0d 100%)',  swatch: 'linear-gradient(135deg,#2a2a35,#0d0d0d)' },
+  { name: '미드나잇',   bg: 'radial-gradient(ellipse at 30% 60%, #0d1b2a 0%, #1b263b 50%, #0d0d12 100%)', swatch: 'linear-gradient(135deg,#1b263b,#0d0d12)' },
+  { name: '퍼플',       bg: 'radial-gradient(ellipse at 70% 30%, #1a0a2e 0%, #2d0a3e 40%, #0d0d0d 100%)',  swatch: 'linear-gradient(135deg,#2d0a3e,#0d0d0d)' },
+  { name: '포레스트',   bg: 'radial-gradient(ellipse at 50% 50%, #0a1a0a 0%, #102010 50%, #050d05 100%)',  swatch: 'linear-gradient(135deg,#102010,#050d05)' },
+  { name: '앰버',       bg: 'radial-gradient(ellipse at 40% 50%, #1a1008 0%, #2a1a06 50%, #0d0a00 100%)',  swatch: 'linear-gradient(135deg,#2a1a06,#0d0a00)' },
+  { name: '오션',       bg: 'radial-gradient(ellipse at 60% 30%, #001a2e 0%, #003355 50%, #000d1a 100%)',  swatch: 'linear-gradient(135deg,#003355,#000d1a)' },
+  { name: '로즈',       bg: 'radial-gradient(ellipse at 40% 60%, #2e0a14 0%, #4a0e1e 40%, #0d0005 100%)',  swatch: 'linear-gradient(135deg,#4a0e1e,#0d0005)' },
+];
+let wallpaperIdx = 0;
+
+const WP_KEY = 'portfolio_wallpaper';
+
+function applyWallpaper(idx) {
+  wallpaperIdx = idx;
+  document.getElementById('desktop').style.background = WALLPAPERS[idx].bg;
+  document.querySelectorAll('.wp-swatch').forEach((s, i) => s.classList.toggle('active', i === idx));
+  localStorage.setItem(WP_KEY, idx);
+}
+
+/* 다크/라이트 모드 */
+const THEME_KEY = 'portfolio_theme';
+let isLightMode = false;
+
+function toggleTheme() {
+  isLightMode = !isLightMode;
+  document.body.classList.toggle('light-mode', isLightMode);
+  localStorage.setItem(THEME_KEY, isLightMode ? '1' : '0');
+  // 설정 메뉴 버튼 텍스트 업데이트
+  const btn = document.getElementById('theme-toggle-item');
+  if (btn) btn.querySelector('span:last-child').textContent = isLightMode ? ' 다크 모드' : ' 라이트 모드';
+}
+
+function loadTheme() {
+  isLightMode = localStorage.getItem(THEME_KEY) === '1';
+  document.body.classList.toggle('light-mode', isLightMode);
+}
+
+function loadWallpaper() {
+  const saved = parseInt(localStorage.getItem(WP_KEY));
+  if (!isNaN(saved) && WALLPAPERS[saved]) {
+    wallpaperIdx = saved;
+    document.getElementById('desktop').style.background = WALLPAPERS[saved].bg;
+  }
+}
+
+function cycleWallpaper() {
+  applyWallpaper((wallpaperIdx + 1) % WALLPAPERS.length);
+}
+
+/* 배경화면 팔레트 */
+let _wpHideTimer = null;
+
+function initWallpaperPicker() {
+  const inner = document.getElementById('wallpaper-picker-inner');
+  WALLPAPERS.forEach((w, i) => {
+    const s = document.createElement('div');
+    s.className = 'wp-swatch' + (i === 0 ? ' active' : '');
+    s.style.background = w.swatch;
+    s.title = w.name;
+    s.innerHTML = `<div class="wp-swatch-label">${w.name}</div>`;
+    s.addEventListener('click', () => { applyWallpaper(i); });
+    inner.appendChild(s);
+  });
+}
+
+function showWallpaperPicker() {
+  cancelHideWallpaperPicker();
+  const picker = document.getElementById('wallpaper-picker');
+  const btn    = document.getElementById('dock-wallpaper-btn');
+  picker.classList.add('open');
+  requestAnimationFrame(() => {
+    const r  = btn.getBoundingClientRect();
+    const pW = picker.offsetWidth;
+    const left = Math.min(r.left + r.width / 2 - pW / 2, window.innerWidth - pW - 8);
+    picker.style.left   = Math.max(8, left) + 'px';
+    picker.style.bottom = (window.innerHeight - r.top + 8) + 'px';
+    picker.style.top    = 'auto';
+  });
+}
+
+function scheduleHideWallpaperPicker() {
+  _wpHideTimer = setTimeout(() => {
+    document.getElementById('wallpaper-picker').classList.remove('open');
+  }, 200);
+}
+
+function cancelHideWallpaperPicker() {
+  clearTimeout(_wpHideTimer);
+}
+
+/* 모든 창 닫기 */
+function closeAllWindows() {
+  Object.keys(windows).forEach(id => closeWindow(id));
+}
+
+/* 폴더 위치 초기화 */
+function resetIconPositions() {
+  localStorage.removeItem(POS_KEY);
+  // 기본 위치로 복원
+  CONTENT.projects.forEach(p => {
+    const def = DEFAULT_POSITIONS[p.id];
+    if (def) { p.position.x = def.x; p.position.y = def.y; }
+  });
+  const layer = document.getElementById('icon-layer');
+  layer.innerHTML = '';
+  renderIcons(getFilteredProjects());
+  showToast('폴더 위치가 초기화되었습니다');
+}
+
+/* 간단한 토스트 */
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = `
+    position:fixed; bottom:100px; left:50%; transform:translateX(-50%);
+    background:rgba(0,0,0,0.8); color:white; font-size:12px;
+    padding:7px 16px; border-radius:20px; z-index:9999;
+    backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1);
+    animation:fadeInUp 0.2s ease;
+  `;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(()=>t.remove(),300); }, 2000);
+}
+
+/* ═══════════════════════════════════════════
+   Spotlight 검색
+   ═══════════════════════════════════════════ */
+let spotActiveIdx = -1;
+
+function initSpotlight() {
+  // ⌘+Space 또는 Ctrl+Space
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.code === 'Space') {
+      e.preventDefault();
+      toggleSpotlight();
+    }
+    if (e.key === 'Escape') closeSpotlight();
+  });
+
+  const input = document.getElementById('spotlight-input');
+  input.addEventListener('input', () => {
+    document.getElementById('spotlight-clear').classList.toggle('visible', input.value.length > 0);
+    renderSpotResults(input.value.trim());
+    spotActiveIdx = -1;
+  });
+
+  input.addEventListener('keydown', e => {
+    const items = document.querySelectorAll('.spot-result');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      spotActiveIdx = Math.min(spotActiveIdx + 1, items.length - 1);
+      updateSpotActive(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      spotActiveIdx = Math.max(spotActiveIdx - 1, 0);
+      updateSpotActive(items);
+    } else if (e.key === 'Enter') {
+      if (spotActiveIdx >= 0 && items[spotActiveIdx]) items[spotActiveIdx].click();
+      else if (items.length === 1) items[0].click();
+    }
+  });
+}
+
+function updateSpotActive(items) {
+  items.forEach((el, i) => el.classList.toggle('active', i === spotActiveIdx));
+  if (items[spotActiveIdx]) items[spotActiveIdx].scrollIntoView({ block: 'nearest' });
+}
+
+function toggleSpotlight() {
+  const ov = document.getElementById('spotlight-overlay');
+  if (ov.classList.contains('open')) { closeSpotlight(); }
+  else { openSpotlight(); }
+}
+
+function openSpotlight() {
+  const ov = document.getElementById('spotlight-overlay');
+  ov.classList.add('open');
+  const input = document.getElementById('spotlight-input');
+  input.value = '';
+  document.getElementById('spotlight-clear').classList.remove('visible');
+  renderSpotResults('');
+  spotActiveIdx = -1;
+  setTimeout(() => input.focus(), 60);
+}
+
+function closeSpotlight() {
+  document.getElementById('spotlight-overlay').classList.remove('open');
+}
+
+function clearSpotlight() {
+  const input = document.getElementById('spotlight-input');
+  input.value = '';
+  input.focus();
+  document.getElementById('spotlight-clear').classList.remove('visible');
+  renderSpotResults('');
+  spotActiveIdx = -1;
+}
+
+function renderSpotResults(query) {
+  const container = document.getElementById('spotlight-results');
+  const q = query.toLowerCase();
+
+  // 검색 대상: 프로젝트 + 고정 항목
+  const FIXED = [
+    { id: '__about__',   title: 'About Me',    sub: '소개',    icon: '👤', action: () => { closeSpotlight(); openAbout(); } },
+    { id: '__contact__', title: 'Contact',     sub: '연락처',  icon: '✉️', action: () => { closeSpotlight(); openContact(); } },
+  ];
+
+  const projects = CONTENT.projects.filter(p => {
+    if (!q) return true;
+    return p.title.toLowerCase().includes(q)
+      || p.category.toLowerCase().includes(q)
+      || String(p.year).includes(q)
+      || (p.description || '').toLowerCase().includes(q);
+  });
+
+  const fixed = FIXED.filter(f => !q || f.title.toLowerCase().includes(q) || f.sub.includes(q));
+
+  if (projects.length === 0 && fixed.length === 0) {
+    container.innerHTML = `<div class="spot-empty">검색 결과 없음 — <em>"${query}"</em></div>`;
+    return;
+  }
+
+  let html = '';
+
+  if (projects.length > 0) {
+    html += `<div class="spot-section-label">프로젝트</div>`;
+    projects.forEach(p => {
+      const iconHTML = p.thumbnail
+        ? `<img src="${p.thumbnail}" alt="">`
+        : `🗂️`;
+      html += `
+        <div class="spot-result" data-id="${p.id}">
+          <div class="spot-icon">${iconHTML}</div>
+          <div class="spot-info">
+            <div class="spot-title">${highlight(p.title, q)}</div>
+            <div class="spot-meta">${p.category} · ${p.year}</div>
+          </div>
+        </div>`;
+    });
+  }
+
+  if (fixed.length > 0) {
+    html += `<div class="spot-section-label">바로가기</div>`;
+    fixed.forEach(f => {
+      html += `
+        <div class="spot-result" data-fixed="${f.id}">
+          <div class="spot-icon">${f.icon}</div>
+          <div class="spot-info">
+            <div class="spot-title">${f.title}</div>
+            <div class="spot-meta">${f.sub}</div>
+          </div>
+        </div>`;
+    });
+  }
+
+  container.innerHTML = html;
+
+  // 이벤트 바인딩
+  container.querySelectorAll('.spot-result[data-id]').forEach(el => {
+    const pid = el.dataset.id;
+    const proj = CONTENT.projects.find(p => p.id === pid);
+    el.addEventListener('click', () => { closeSpotlight(); if (proj) openProject(proj); });
+  });
+  container.querySelectorAll('.spot-result[data-fixed]').forEach(el => {
+    const fid = el.dataset.fixed;
+    const item = FIXED.find(f => f.id === fid);
+    if (item) el.addEventListener('click', item.action);
+  });
+}
+
+function highlight(text, query) {
+  if (!query) return text;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx < 0) return text;
+  return text.slice(0, idx)
+    + `<mark style="background:rgba(69,130,230,0.5);color:white;border-radius:2px;">${text.slice(idx, idx + query.length)}</mark>`
+    + text.slice(idx + query.length);
+}
+
+/* ═══════════════════════════════════════════
+   우클릭 컨텍스트 메뉴
+   ═══════════════════════════════════════════ */
+function initContextMenu() {
+  const menu = document.getElementById('ctx-menu');
+
+  document.getElementById('desktop').addEventListener('contextmenu', e => {
+    // 창/Dock/설정메뉴 위에서 우클릭은 무시
+    if (e.target.closest('.window, #dock, #settings-menu, #ctx-menu')) return;
+    e.preventDefault();
+    showCtxMenu(e.clientX, e.clientY);
+  });
+
+  // 다른 곳 클릭 시 닫기
+  document.addEventListener('click', () => closeCtxMenu());
+  document.addEventListener('contextmenu', () => closeCtxMenu(), true); // 다른 우클릭 시에도 먼저 닫기
+}
+
+function showCtxMenu(x, y) {
+  const menu = document.getElementById('ctx-menu');
+  menu.classList.add('open');
+  // 화면 경계 체크
+  const mW = 220, mH = 300;
+  const left = x + mW > window.innerWidth  ? x - mW : x;
+  const top  = y + mH > window.innerHeight ? y - mH : y;
+  menu.style.left = left + 'px';
+  menu.style.top  = top  + 'px';
+  menu.style.transformOrigin = (x + mW > window.innerWidth ? 'top right' : 'top left');
+}
+
+function closeCtxMenu() {
+  document.getElementById('ctx-menu').classList.remove('open');
+}
+
+function ctxAct(action) {
+  closeCtxMenu();
+  if (action === 'wallpaper')  cycleWallpaper();
+  if (action === 'reset-pos')  resetIconPositions();
+  if (action === 'close-all')  closeAllWindows();
+  if (action === 'about')      openAbout();
+  if (action === 'contact')    openContact();
+  if (action === 'admin')      window.open('admin.html', '_blank');
+}
+
+function init() {
+  document.getElementById('menu-name').textContent = CONTENT.owner.name;
+  loadIconPositions();
+  startClock();
+  renderIcons(getFilteredProjects());
+  buildCategoryDock();
+  document.getElementById('desktop').addEventListener('click', deselectAll);
+  initContextMenu();
+  initSpotlight();
+  loadTheme();
+  loadWallpaper();
+  initWallpaperPicker();
+}
+
+/* ═══════════════════════════════════════════
+   시계
+   ═══════════════════════════════════════════ */
+function startClock() {
+  function tick() {
+    const now = new Date();
+    const opts = { weekday:'short', month:'short', day:'numeric',
+                   hour:'2-digit', minute:'2-digit' };
+    document.getElementById('menu-clock').textContent =
+      now.toLocaleString('ko-KR', opts);
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+/* ═══════════════════════════════════════════
+   폴더 아이콘
+   ═══════════════════════════════════════════ */
+function folderSVG() {
+  return `<svg viewBox="0 0 80 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+    <rect x="2" y="16" width="76" height="46" rx="6" fill="url(#fb)"/>
+    <path d="M2 22 Q2 16 8 16 L30 16 Q36 16 38 20 L42 26 L78 26 Q78 16 72 16 L8 16 Q2 16 2 22Z" fill="url(#ft)"/>
+    <rect x="2" y="24" width="76" height="38" rx="5" fill="url(#ff)"/>
+    <rect x="2" y="24" width="76" height="12" rx="5" fill="url(#fs)" opacity="0.3"/>
+    <defs>
+      <linearGradient id="fb" x1="40" y1="16" x2="40" y2="62" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#4da3e8"/>
+        <stop offset="100%" stop-color="#2271c8"/>
+      </linearGradient>
+      <linearGradient id="ft" x1="40" y1="16" x2="40" y2="28" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#5bb4f0"/>
+        <stop offset="100%" stop-color="#3d8fd4"/>
+      </linearGradient>
+      <linearGradient id="ff" x1="40" y1="24" x2="40" y2="62" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#5bbcf8"/>
+        <stop offset="100%" stop-color="#2882d8"/>
+      </linearGradient>
+      <linearGradient id="fs" x1="40" y1="24" x2="40" y2="36" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="white" stop-opacity="0.6"/>
+        <stop offset="100%" stop-color="white" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+  </svg>`;
+}
+
+function thumbnailIcon(src, title) {
+  return `<img src="${src}" alt="${title}"
+    style="width:100%;height:100%;object-fit:cover;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.5);">`;
+}
+
+function renderIcons(projects) {
+  const layer = document.getElementById('icon-layer');
+  layer.innerHTML = '';
+  projects.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'folder-item';
+    el.id = 'icon-' + p.id;
+    el.style.left = p.position.x + 'px';
+    el.style.top = p.position.y + 'px';
+
+    const previewImgHTML = p.thumbnail
+      ? `<img class="folder-preview-img" src="${p.thumbnail}" alt="">`
+      : `<div class="folder-preview-placeholder">🗂️</div>`;
+
+    el.innerHTML = `
+      <div class="folder-preview">
+        ${previewImgHTML}
+        <div class="folder-preview-info">
+          <div class="folder-preview-title">${p.title}</div>
+          <div class="folder-preview-meta">${p.category}${p.year ? ' · ' + p.year : ''}</div>
+        </div>
+      </div>
+      <div class="folder-icon-wrap">
+        ${p.thumbnail ? thumbnailIcon(p.thumbnail, p.title) : folderSVG()}
+      </div>
+      <div class="folder-label">${p.title}</div>`;
+
+    el.addEventListener('click', e => { e.stopPropagation(); selectIcon(p.id); });
+    el.addEventListener('dblclick', e => { e.stopPropagation(); openProject(p); });
+
+    makeDraggable(el, p);
+    layer.appendChild(el);
+  });
+}
+
+function selectIcon(id) {
+  if (selectedId) {
+    const prev = document.getElementById('icon-' + selectedId);
+    if (prev) prev.classList.remove('selected');
+  }
+  selectedId = id;
+  const el = document.getElementById('icon-' + id);
+  if (el) el.classList.add('selected');
+}
+
+function deselectAll() {
+  if (selectedId) {
+    const el = document.getElementById('icon-' + selectedId);
+    if (el) el.classList.remove('selected');
+    selectedId = null;
+  }
+}
+
+/* 아이콘 드래그 (바탕화면 자유 배치) */
+function makeDraggable(el, project) {
+  let startX, startY, startLeft, startTop, dragging = false;
+  el.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    startX = e.clientX; startY = e.clientY;
+    startLeft = project.position.x;
+    startTop = project.position.y;
+    dragging = false;
+
+    const onMove = mv => {
+      const dx = mv.clientX - startX, dy = mv.clientY - startY;
+      if (!dragging && Math.hypot(dx, dy) < 4) return;
+      dragging = true;
+      project.position.x = startLeft + dx;
+      project.position.y = startTop + dy;
+      el.style.left = project.position.x + 'px';
+      el.style.top = project.position.y + 'px';
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      if (dragging) saveIconPositions(); // 드래그 완료 시 위치 저장
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   카테고리 Dock 버튼 생성
+   ═══════════════════════════════════════════ */
+const CATEGORY_COLORS = {
+  '브랜딩':    'linear-gradient(135deg,#ff6b6b,#ee5a24)',
+  '광고':      'linear-gradient(135deg,#4facfe,#00f2fe)',
+  '포트레이트':'linear-gradient(135deg,#a18cd1,#fbc2eb)',
+  '공간':      'linear-gradient(135deg,#43e97b,#38f9d7)',
+};
+const CATEGORY_EMOJI = { '브랜딩':'🎨', '광고':'📢', '포트레이트':'📷', '공간':'🏛️' };
+
+function buildCategoryDock() { /* 필터 바 제거됨 */ }
+
+/* ═══════════════════════════════════════════
+   창 시스템
+   ═══════════════════════════════════════════ */
+
+/* 프로젝트 body HTML 빌더 */
+function buildProjectBodyHTML(project, animDir) {
+  const hasPhotos = project.photos && project.photos.length > 0;
+  const coverSrc = project.thumbnail || (hasPhotos ? project.photos[0] : '');
+  const pid = project.id;
+
+  const coverHTML = coverSrc
+    ? `<img class="proj-cover" src="${coverSrc}" alt="${project.title}" style="cursor:zoom-in;"
+         onclick="openLightboxById('${pid}', ${hasPhotos ? 0 : -1})">`
+    : `<div class="proj-cover-placeholder">🗂️</div>`;
+
+  const gridHTML = hasPhotos
+    ? project.photos.map((src, i) => `
+        <div class="photo-thumb" onclick="openLightboxById('${pid}',${i})">
+          <img src="${src}" alt="" loading="lazy"/>
+        </div>`).join('')
+    : Array.from({length:6}).map((_,i) => `
+        <div class="photo-thumb">
+          <div class="photo-placeholder">이미지 ${i+1}</div>
+        </div>`).join('');
+
+  const linkHTML = project.link
+    ? `<a class="proj-link-btn" href="${project.link}" target="_blank" rel="noopener"><span>🔗</span> 프로젝트 보기</a>`
+    : '';
+
+  const animClass = animDir === 1 ? 'proj-body-anim-r' : animDir === -1 ? 'proj-body-anim-l' : '';
+
+  return `<div class="window-body ${animClass}">
+    ${coverHTML}
+    <div class="proj-info">
+      <div class="proj-header">
+        <div class="proj-tags">
+          ${project.category ? `<span class="meta-tag cat">${project.category}</span>` : ''}
+          ${project.year     ? `<span class="meta-tag">${project.year}</span>` : ''}
+        </div>
+        ${linkHTML}
+      </div>
+      ${project.description ? `<p class="project-desc">${project.description}</p>` : ''}
+    </div>
+    <div class="proj-divider"></div>
+    <div class="proj-gallery-label">사진 ${hasPhotos ? project.photos.length + '장' : ''}</div>
+    <div class="photo-grid">${gridHTML}</div>
+  </div>`;
+}
+
+/* 창 내 nav 버튼 업데이트 */
+function updateNavButtons(slotId) {
+  const w = windows[slotId];
+  if (!w || !w.projectId) return;
+  const list = getFilteredProjects();
+  const idx  = list.findIndex(p => p.id === w.projectId);
+  const total = list.length;
+
+  const counter = w.el.querySelector('.win-nav-counter');
+  const btnPrev = w.el.querySelector('.win-nav-prev');
+  const btnNext = w.el.querySelector('.win-nav-next');
+  if (counter) counter.textContent = total > 1 ? `${idx+1} / ${total}` : '';
+  if (btnPrev)  btnPrev.disabled = idx <= 0;
+  if (btnNext)  btnNext.disabled = idx >= total - 1;
+}
+
+function getFilteredProjects() {
+  return CONTENT.projects.filter(p => p.visible !== false);
+}
+
+function navigateProject(slotId, dir) {
+  const w = windows[slotId];
+  if (!w) return;
+  const list = getFilteredProjects();
+  const idx  = list.findIndex(p => p.id === w.projectId);
+  const next = list[idx + dir];
+  if (!next) return;
+
+  w.projectId = next.id;
+
+  // titlebar 제목 업데이트
+  const titleEl = w.el.querySelector('.window-title');
+  if (titleEl) titleEl.textContent = next.title;
+
+  // body 교체 (애니메이션)
+  const oldBody = w.el.querySelector('.window-body');
+  const tmp = document.createElement('div');
+  tmp.innerHTML = buildProjectBodyHTML(next, dir);
+  const newBody = tmp.firstElementChild;
+  if (oldBody) oldBody.replaceWith(newBody);
+
+  // resize handle 위치 유지
+  if (!w.el.querySelector('.window-resize-handle')) {
+    const h = document.createElement('div');
+    h.className = 'window-resize-handle';
+    w.el.appendChild(h);
+    makeWindowResizable(w.el, slotId);
+  }
+
+  updateNavButtons(slotId);
+  bringToFront(slotId);
+}
+
+function openProject(project) {
+  // 이미 열린 슬롯이 있으면 복원
+  if (windows[project.id]) {
+    restoreWindow(project.id);
+    return;
+  }
+  // 다른 슬롯에서 이 프로젝트를 표시 중이면 그 슬롯으로
+  const existing = Object.values(windows).find(w => w.projectId === project.id);
+  if (existing) { restoreWindow(existing.slotId); return; }
+
+  const slotId = project.id;
+  const layer  = document.getElementById('window-layer');
+  const win    = document.createElement('div');
+  win.className = 'window';
+  win.id = 'win-' + slotId;
+  win.style.cssText = `
+    width: 580px; height: 540px;
+    left: ${Math.max(20, Math.random() * (window.innerWidth - 620))}px;
+    top: ${Math.max(20, Math.random() * (window.innerHeight - 580))}px;
+    z-index: ${++topZ}; pointer-events: all;
+  `;
+
+  const list  = getFilteredProjects();
+  const idx   = list.findIndex(p => p.id === project.id);
+  const total = list.length;
+  const navCounter = total > 1 ? `${idx+1} / ${total}` : '';
+
+  win.innerHTML = `
+    <div class="window-titlebar" id="tb-${slotId}">
+      <button class="traffic-btn btn-close" onclick="closeWindow('${slotId}')"></button>
+      <button class="traffic-btn btn-min"   onclick="minimizeWindow('${slotId}')"></button>
+      <button class="traffic-btn btn-max"   onclick="maximizeWindow('${slotId}')"></button>
+      <div class="window-title">${project.title}</div>
+      <div class="win-nav-group">
+        <span class="win-nav-counter">${navCounter}</span>
+        <button class="win-nav-btn win-nav-prev" onclick="navigateProject('${slotId}',-1)" ${idx<=0?'disabled':''}>‹</button>
+        <button class="win-nav-btn win-nav-next" onclick="navigateProject('${slotId}', 1)" ${idx>=total-1?'disabled':''}>›</button>
+      </div>
+    </div>
+    ${buildProjectBodyHTML(project, 0)}
+    <div class="window-resize-handle"></div>`;
+
+  win.addEventListener('mousedown', () => bringToFront(slotId));
+  makeWindowDraggable(win, slotId);
+  makeWindowResizable(win, slotId);
+
+  layer.appendChild(win);
+  windows[slotId] = { el: win, z: topZ, slotId, projectId: project.id };
+
+  // 폴더 아이콘 위치에서 확장 애니메이션
+  const iconEl = document.getElementById('icon-' + project.id);
+  if (iconEl) {
+    const ir = iconEl.getBoundingClientRect();
+    const wr = win.getBoundingClientRect();
+    const ox = (ir.left + ir.width  / 2) - (wr.left + wr.width  / 2);
+    const oy = (ir.top  + ir.height / 2) - (wr.top  + wr.height / 2);
+    win.style.animation = 'none';
+    win.style.transformOrigin = 'center center';
+    win.style.transform = `translate(${ox}px,${oy}px) scale(0.08)`;
+    win.style.opacity = '0';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      win.style.transition = 'transform 0.28s cubic-bezier(0.34,1.1,0.64,1), opacity 0.18s ease-out';
+      win.style.transform  = 'translate(0,0) scale(1)';
+      win.style.opacity    = '1';
+      setTimeout(() => { win.style.transition = ''; win.style.transform = ''; }, 300);
+    }));
+  }
+}
+
+function closeWindow(id) {
+  const w = windows[id];
+  if (!w) return;
+  // 최소화 상태면 Dock 미니 아이콘도 정리
+  if (w.minimized) {
+    const mini = document.getElementById('dock-mini-' + id);
+    if (mini) {
+      mini.remove();
+      const dock = document.getElementById('dock');
+      if (!dock.querySelector('.dock-mini-win'))
+        document.getElementById('dock-min-sep').classList.remove('has-items');
+    }
+    w.el.style.display = '';
+  }
+  w.el.style.animation = 'none';
+  w.el.style.transition = 'opacity 0.12s, transform 0.12s';
+  w.el.style.opacity = '0';
+  w.el.style.transform = 'scale(0.88)';
+  setTimeout(() => { w.el.remove(); delete windows[id]; }, 120);
+}
+
+function minimizeWindow(id) {
+  const w = windows[id];
+  if (!w || w.minimized) return;
+  w.minimized = true;
+  const el = w.el;
+
+  // Dock 위치 계산 (중앙 아래쪽으로 날아감)
+  const dock = document.getElementById('dock');
+  const dockR = dock.getBoundingClientRect();
+  const winR  = el.getBoundingClientRect();
+  const tx = (dockR.left + dockR.width / 2) - (winR.left + winR.width / 2);
+  const ty = (dockR.top + dockR.height / 2) - (winR.top + winR.height / 2);
+
+  el.style.transformOrigin = 'center center';
+  el.style.transition = 'opacity 0.32s ease-in, transform 0.32s cubic-bezier(0.55,0,1,0.45)';
+  el.style.opacity = '0';
+  el.style.transform = `translate(${tx}px, ${ty}px) scale(0.08)`;
+  setTimeout(() => { el.style.display = 'none'; }, 320);
+
+  // Dock에 미니 아이콘 추가
+  const SPECIAL_TITLES = { '__about__':'About Me', '__contact__':'Contact', '__breakout__':'Breakout', '__apple__':'사과게임' };
+  const project = CONTENT.projects.find(p => p.id === id) || { title: SPECIAL_TITLES[id] || id, thumbnail: '' };
+  const SPECIAL_EMOJI = { '__about__':'👤', '__contact__':'✉️', '__breakout__':'🕹️', '__apple__':'🍎' };
+  const emoji = project.thumbnail ? '' : (SPECIAL_EMOJI[id] || '🗂️');
+  const label = project.title || id;
+
+  const mini = document.createElement('div');
+  mini.className = 'dock-mini-win';
+  mini.id = 'dock-mini-' + id;
+  mini.innerHTML = `
+    <div class="dock-mini-label">${label}</div>
+    <div class="dock-mini-img">
+      ${project.thumbnail
+        ? `<img src="${project.thumbnail}" style="width:100%;height:100%;object-fit:cover;">`
+        : `<span>${emoji}</span>`}
+    </div>`;
+  mini.addEventListener('click', () => restoreWindow(id));
+
+  const sep = document.getElementById('dock-min-sep');
+  sep.classList.add('has-items');
+  dock.appendChild(mini);
+}
+
+function restoreWindow(id) {
+  const w = windows[id];
+  if (!w) return;
+  const el = w.el;
+  if (w.minimized) {
+    w.minimized = false;
+
+    // Dock 미니 아이콘 제거 (애니메이션 후)
+    const mini = document.getElementById('dock-mini-' + id);
+    if (mini) {
+      mini.style.transition = 'opacity 0.15s, transform 0.15s';
+      mini.style.opacity = '0';
+      mini.style.transform = 'scale(0.5) translateY(8px)';
+      setTimeout(() => {
+        mini.remove();
+        // 남은 미니 아이콘 없으면 구분선 숨김
+        const dock = document.getElementById('dock');
+        if (!dock.querySelector('.dock-mini-win')) {
+          document.getElementById('dock-min-sep').classList.remove('has-items');
+        }
+      }, 150);
+    }
+
+    // 창 복원 애니메이션
+    el.style.display = '';
+    el.style.transition = 'none';
+    // 작은 상태에서 시작
+    const dock = document.getElementById('dock');
+    const dockR = dock.getBoundingClientRect();
+    const winR  = el.getBoundingClientRect();
+    const tx = (dockR.left + dockR.width / 2) - (winR.left + winR.width / 2);
+    const ty = (dockR.top + dockR.height / 2) - (winR.top + winR.height / 2);
+    el.style.transform = `translate(${tx}px, ${ty}px) scale(0.08)`;
+    el.style.opacity = '0';
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.style.transition = 'opacity 0.28s ease-out, transform 0.32s cubic-bezier(0.34,1.15,0.64,1)';
+        el.style.opacity = '1';
+        el.style.transform = 'translate(0,0) scale(1)';
+      });
+    });
+  }
+  bringToFront(id);
+}
+
+function maximizeWindow(id) {
+  const w = windows[id];
+  if (!w) return;
+  const el = w.el;
+  if (el.dataset.maximized === '1') {
+    el.style.cssText = el.dataset.prevStyle;
+    el.dataset.maximized = '0';
+  } else {
+    el.dataset.prevStyle = el.style.cssText;
+    el.style.left = '0'; el.style.top = '0';
+    el.style.width = '100vw'; el.style.height = 'calc(100vh - 28px)';
+    el.style.borderRadius = '0';
+    el.dataset.maximized = '1';
+  }
+}
+
+function bringToFront(id) {
+  const w = windows[id];
+  if (!w) return;
+  w.el.style.zIndex = ++topZ;
+  w.z = topZ;
+}
+
+/* 창 드래그 */
+function makeWindowDraggable(win, id) {
+  const tb = win.querySelector('.window-titlebar');
+  let ox, oy;
+  tb.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('traffic-btn')) return;
+    bringToFront(id);
+    ox = e.clientX - win.offsetLeft;
+    oy = e.clientY - win.offsetTop;
+    const onMove = mv => {
+      win.style.left = (mv.clientX - ox) + 'px';
+      win.style.top  = Math.max(0, mv.clientY - oy) + 'px';
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+function makeWindowResizable(win, id) {
+  const handle = win.querySelector('.window-resize-handle');
+  if (!handle) return;
+  handle.addEventListener('mousedown', e => {
+    e.stopPropagation();
+    bringToFront(id);
+    const startX = e.clientX, startY = e.clientY;
+    const startW = win.offsetWidth, startH = win.offsetHeight;
+    const onMove = mv => {
+      const newW = Math.max(420, startW + (mv.clientX - startX));
+      const newH = Math.max(300, startH + (mv.clientY - startY));
+      win.style.width  = newW + 'px';
+      win.style.height = newH + 'px';
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   Finder 창 (프로젝트 검색)
+   ═══════════════════════════════════════════ */
+// Finder 상태
+let finderSidebarSel = 'all'; // 현재 선택된 사이드바 항목
+let finderViewMode = 'grid';  // 'grid' | 'list'
+let finderSearchQ = '';
+
+function openFinder() {
+  const existingId = '__finder__';
+  if (windows[existingId]) {
+    bringToFront(existingId);
+    if (windows[existingId].minimized) restoreWindow(existingId);
+    return;
+  }
+
+  // 카테고리 목록 수집
+  const cats = [...new Set(CONTENT.projects.map(p => p.category).filter(Boolean))];
+
+  const winEl = document.createElement('div');
+  winEl.className = 'window';
+  winEl.id = existingId;
+  const W = 760, H = 520;
+  const left = Math.round((window.innerWidth - W) / 2);
+  const top  = Math.round((window.innerHeight - H) / 2);
+  winEl.style.cssText = `width:${W}px;height:${H}px;left:${left}px;top:${top}px;z-index:${++topZ};pointer-events:all;`;
+
+  const sidebarItems = [
+    { id:'recents',  icon:'🕐', label:'최근 항목' },
+    { id:'all',      icon:'📁', label:'모든 프로젝트' },
+    { id:'visible',  icon:'🟢', label:'공개 중' },
+    { id:'hidden',   icon:'⚫', label:'숨김' },
+  ];
+  const catItems = cats.map(c => ({ id:'cat:'+c, icon:'🗂️', label:c }));
+
+  const sidebarHTML = `
+    <div style="padding:8px 0 4px;font-size:10px;font-weight:700;color:rgba(128,128,128,0.6);
+                letter-spacing:0.06em;padding-left:16px;text-transform:uppercase;">즐겨찾기</div>
+    ${sidebarItems.map(s => `
+      <div class="finder-sb-item ${s.id===finderSidebarSel?'finder-sb-active':''}"
+           onclick="finderSelectSidebar('${s.id}')" id="finder-sb-${s.id}">
+        <span style="font-size:13px;">${s.icon}</span>
+        <span>${s.label}</span>
+      </div>`).join('')}
+    ${catItems.length ? `
+    <div style="padding:12px 0 4px;font-size:10px;font-weight:700;color:rgba(128,128,128,0.6);
+                letter-spacing:0.06em;padding-left:16px;text-transform:uppercase;">카테고리</div>
+    ${catItems.map(s => `
+      <div class="finder-sb-item ${s.id===finderSidebarSel?'finder-sb-active':''}"
+           onclick="finderSelectSidebar('${s.id}')" id="finder-sb-${CSS.escape(s.id)}">
+        <span style="font-size:13px;">${s.icon}</span>
+        <span>${s.label}</span>
+      </div>`).join('')}` : ''}
+    <div style="padding:12px 0 4px;font-size:10px;font-weight:700;color:rgba(128,128,128,0.6);
+                letter-spacing:0.06em;padding-left:16px;text-transform:uppercase;">태그</div>
+    <div class="finder-sb-item" onclick="finderSelectSidebar('tag:visible')" id="finder-sb-tag-visible">
+      <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#34c759;margin-right:2px;"></span>
+      <span>공개</span>
+    </div>
+    <div class="finder-sb-item" onclick="finderSelectSidebar('tag:hidden')" id="finder-sb-tag-hidden">
+      <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#8e8e93;margin-right:2px;"></span>
+      <span>숨김</span>
+    </div>`;
+
+  winEl.innerHTML = `
+    <div class="window-titlebar" id="tb-${existingId}">
+      <button class="traffic-btn btn-close" onclick="closeWindow('${existingId}')"></button>
+      <button class="traffic-btn btn-min"   onclick="minimizeWindow('${existingId}')"></button>
+      <button class="traffic-btn btn-max"   onclick="maximizeWindow('${existingId}')"></button>
+      <!-- Finder 툴바 -->
+      <div style="display:flex;align-items:center;gap:8px;margin-left:12px;flex:1;">
+        <button onclick="finderNav(-1)" style="background:rgba(128,128,128,0.2);border:none;color:var(--win-text);
+          width:26px;height:22px;border-radius:5px;cursor:pointer;font-size:14px;line-height:1;">‹</button>
+        <button onclick="finderNav(1)"  style="background:rgba(128,128,128,0.2);border:none;color:var(--win-text);
+          width:26px;height:22px;border-radius:5px;cursor:pointer;font-size:14px;line-height:1;">›</button>
+        <div id="finder-breadcrumb" style="font-size:13px;font-weight:600;color:var(--win-text);flex:1;text-align:center;">
+          모든 프로젝트
+        </div>
+        <!-- 뷰 토글 -->
+        <button onclick="finderSetView('grid')" id="finder-view-grid"
+          style="background:rgba(128,128,128,0.25);border:none;color:var(--win-text);
+                 width:28px;height:22px;border-radius:5px 0 0 5px;cursor:pointer;font-size:13px;">⊞</button>
+        <button onclick="finderSetView('list')" id="finder-view-list"
+          style="background:rgba(128,128,128,0.15);border:none;color:var(--win-text);
+                 width:28px;height:22px;border-radius:0 5px 5px 0;cursor:pointer;font-size:13px;margin-left:-1px;">☰</button>
+        <!-- 검색창 -->
+        <div style="position:relative;display:flex;align-items:center;">
+          <span style="position:absolute;left:7px;font-size:11px;color:rgba(128,128,128,0.6);">🔍</span>
+          <input id="finder-search" type="text" placeholder="검색"
+            style="width:130px;padding:3px 8px 3px 22px;border-radius:7px;
+                   border:1px solid rgba(128,128,128,0.3);background:rgba(128,128,128,0.15);
+                   color:var(--win-text);font-size:12px;outline:none;"
+            oninput="finderOnSearch(this.value)" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 본문: 사이드바 + 파일 영역 -->
+    <div style="display:flex;height:calc(100% - 40px);border-radius:0 0 12px 12px;overflow:hidden;">
+
+      <!-- 사이드바 -->
+      <div style="width:160px;min-width:140px;border-right:1px solid var(--win-border);
+                  background:rgba(0,0,0,0.15);overflow-y:auto;padding:8px 0;flex-shrink:0;">
+        ${sidebarHTML}
+      </div>
+
+      <!-- 파일 영역 -->
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+        <!-- 탭바 -->
+        <div id="finder-tabbar" style="display:flex;gap:0;border-bottom:1px solid var(--win-border);
+             background:rgba(0,0,0,0.08);padding:0 12px;overflow-x:auto;white-space:nowrap;">
+          <div class="finder-tab finder-tab-active" id="finder-tab-main">
+            <span id="finder-tab-label">모든 프로젝트</span>
+          </div>
+        </div>
+        <!-- 파일 그리드/리스트 -->
+        <div id="finder-content" style="flex:1;overflow-y:auto;padding:16px;">
+        </div>
+      </div>
+    </div>
+    <div class="window-resize-handle"></div>`;
+
+  /* CSS 인라인 주입 (Finder 전용) */
+  if (!document.getElementById('finder-style')) {
+    const st = document.createElement('style');
+    st.id = 'finder-style';
+    st.textContent = `
+      .finder-sb-item {
+        display:flex;align-items:center;gap:8px;padding:5px 16px;
+        font-size:12px;color:var(--win-text);cursor:pointer;border-radius:6px;
+        margin:1px 6px;user-select:none;transition:background 0.12s;
+      }
+      .finder-sb-item:hover { background:rgba(128,128,128,0.15); }
+      .finder-sb-active { background:rgba(0,122,255,0.25) !important; color:#4da6ff; }
+      .finder-tab {
+        padding:7px 16px;font-size:12px;color:rgba(128,128,128,0.7);cursor:pointer;
+        border-right:1px solid var(--win-border);white-space:nowrap;
+      }
+      .finder-tab-active { color:var(--win-text);background:rgba(128,128,128,0.1); }
+      .finder-file-card {
+        display:flex;flex-direction:column;align-items:center;padding:10px 6px;
+        border-radius:8px;cursor:pointer;transition:background 0.12s;
+        text-align:center;user-select:none;
+      }
+      .finder-file-card:hover { background:rgba(128,128,128,0.18); }
+      .finder-file-card.selected { background:rgba(0,122,255,0.22); }
+      .finder-file-thumb {
+        width:80px;height:80px;border-radius:8px;object-fit:cover;
+        box-shadow:0 2px 8px rgba(0,0,0,0.3);margin-bottom:6px;
+      }
+      .finder-file-dot {
+        width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;
+      }
+      .finder-list-row {
+        display:flex;align-items:center;gap:10px;padding:6px 10px;
+        border-radius:6px;cursor:pointer;transition:background 0.12s;
+      }
+      .finder-list-row:hover { background:rgba(128,128,128,0.15); }
+      .finder-list-row.selected { background:rgba(0,122,255,0.22); }
+    `;
+    document.head.appendChild(st);
+  }
+
+  const layer = document.getElementById('window-layer');
+  layer.appendChild(winEl);
+  windows[existingId] = { el: winEl, z: topZ, slotId: existingId, minimized: false };
+  makeDraggable(winEl, document.getElementById(`tb-${existingId}`));
+  makeWindowResizable(winEl, existingId);
+
+  finderSidebarSel = 'all';
+  finderSearchQ = '';
+  renderFinderContent();
+}
+
+function finderGetList() {
+  let list = CONTENT.projects;
+  const q = finderSearchQ.trim().toLowerCase();
+  if (finderSidebarSel === 'recents') {
+    list = [...list].reverse().slice(0, 8);
+  } else if (finderSidebarSel === 'visible' || finderSidebarSel === 'tag:visible') {
+    list = list.filter(p => p.visible !== false);
+  } else if (finderSidebarSel === 'hidden' || finderSidebarSel === 'tag:hidden') {
+    list = list.filter(p => p.visible === false);
+  } else if (finderSidebarSel.startsWith('cat:')) {
+    const cat = finderSidebarSel.slice(4);
+    list = list.filter(p => p.category === cat);
+  }
+  if (q) list = list.filter(p =>
+    p.title.toLowerCase().includes(q) ||
+    (p.category||'').toLowerCase().includes(q) ||
+    (p.desc||'').toLowerCase().includes(q)
+  );
+  return list;
+}
+
+function finderSelectSidebar(id) {
+  // 이전 active 제거
+  document.querySelectorAll('.finder-sb-item').forEach(el => el.classList.remove('finder-sb-active'));
+  const el = document.getElementById('finder-sb-' + id) || document.getElementById('finder-sb-' + CSS.escape(id));
+  if (el) el.classList.add('finder-sb-active');
+  finderSidebarSel = id;
+  finderSearchQ = '';
+  const searchEl = document.getElementById('finder-search');
+  if (searchEl) searchEl.value = '';
+  const labels = { all:'모든 프로젝트', recents:'최근 항목', visible:'공개 중', hidden:'숨김',
+                   'tag:visible':'공개', 'tag:hidden':'숨김' };
+  const label = labels[id] || (id.startsWith('cat:') ? id.slice(4) : id);
+  const bc = document.getElementById('finder-breadcrumb');
+  if (bc) bc.textContent = label;
+  const tl = document.getElementById('finder-tab-label');
+  if (tl) tl.textContent = label;
+  renderFinderContent();
+}
+
+function finderSetView(mode) {
+  finderViewMode = mode;
+  document.getElementById('finder-view-grid').style.background = mode==='grid' ? 'rgba(128,128,128,0.35)' : 'rgba(128,128,128,0.15)';
+  document.getElementById('finder-view-list').style.background = mode==='list' ? 'rgba(128,128,128,0.35)' : 'rgba(128,128,128,0.15)';
+  renderFinderContent();
+}
+
+function finderOnSearch(val) {
+  finderSearchQ = val;
+  renderFinderContent();
+}
+
+function finderNav(dir) { /* 히스토리 미구현, 예비 */ }
+
+let finderSelectedId = null;
+function renderFinderContent() {
+  const el = document.getElementById('finder-content');
+  if (!el) return;
+  const list = finderGetList();
+  if (list.length === 0) {
+    el.innerHTML = `<div style="text-align:center;padding-top:60px;color:rgba(128,128,128,0.5);font-size:13px;">항목 없음</div>`;
+    return;
+  }
+  if (finderViewMode === 'grid') {
+    el.style.display = 'grid';
+    el.style.gridTemplateColumns = 'repeat(auto-fill, minmax(100px, 1fr))';
+    el.style.gap = '8px';
+    el.style.alignContent = 'start';
+    el.innerHTML = list.map(p => {
+      const dot = p.visible !== false
+        ? `<span class="finder-file-dot" style="background:#34c759;"></span>`
+        : `<span class="finder-file-dot" style="background:#8e8e93;"></span>`;
+      const thumb = p.thumbnail
+        ? `<img src="${p.thumbnail}" class="finder-file-thumb" onerror="this.outerHTML='<div class=\\'finder-file-thumb\\' style=\\'background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:32px;\\'>📁</div>'">`
+        : `<div class="finder-file-thumb" style="background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:32px;">📁</div>`;
+      return `<div class="finder-file-card ${finderSelectedId===p.id?'selected':''}"
+        onclick="finderSelectedId='${p.id}';renderFinderContent();"
+        ondblclick="openProject(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+        ${thumb}
+        <div style="font-size:11px;font-weight:500;color:var(--win-text);
+                    max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.title}</div>
+        <div style="font-size:10px;color:rgba(128,128,128,0.7);margin-top:2px;">${dot}${p.category||''}</div>
+      </div>`;
+    }).join('');
+  } else {
+    // 리스트 뷰
+    el.style.display = 'block';
+    el.style.gridTemplateColumns = '';
+    el.style.gap = '';
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 100px 80px;gap:0;
+                  border-bottom:1px solid var(--win-border);padding:4px 10px;
+                  font-size:11px;color:rgba(128,128,128,0.6);font-weight:600;">
+        <span>이름</span><span>카테고리</span><span>상태</span>
+      </div>
+      ${list.map(p => {
+        const dot = p.visible !== false
+          ? `<span class="finder-file-dot" style="background:#34c759;"></span>공개`
+          : `<span class="finder-file-dot" style="background:#8e8e93;"></span>숨김`;
+        const thumb = p.thumbnail
+          ? `<img src="${p.thumbnail}" style="width:28px;height:28px;border-radius:5px;object-fit:cover;" onerror="this.style.display='none'">`
+          : `<div style="width:28px;height:28px;border-radius:5px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:14px;">📁</div>`;
+        return `<div class="finder-list-row ${finderSelectedId===p.id?'selected':''}"
+          onclick="finderSelectedId='${p.id}';renderFinderContent();"
+          ondblclick="openProject(${JSON.stringify(p).replace(/"/g,'&quot;')})"
+          style="display:grid;grid-template-columns:1fr 100px 80px;gap:0;">
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--win-text);">
+            ${thumb}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.title}</span>
+          </div>
+          <div style="font-size:11px;color:rgba(128,128,128,0.7);display:flex;align-items:center;">${p.category||'-'}</div>
+          <div style="font-size:11px;display:flex;align-items:center;">${dot}</div>
+        </div>`;
+      }).join('')}`;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   About / Contact 창
+   ═══════════════════════════════════════════ */
+function openAbout() {
+  const o = CONTENT.owner;
+  const fake = {
+    id: '__about__',
+    title: 'About Me',
+    category: '', year: '',
+    description: `<strong style="font-size:15px;color:white;">${o.name}</strong><br>
+      <span style="color:rgba(255,255,255,0.5);font-size:12px;">${o.bio}</span>`,
+    photos: [],
+    position: { x: 0, y: 0 }
+  };
+  openProject(fake);
+}
+
+function openContact() {
+  const c = CONTENT.owner.contact;
+  const fake = {
+    id: '__contact__',
+    title: 'Contact',
+    category: '', year: '',
+    description: `
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
+        <a href="mailto:${c.email}" style="color:#4da3e8;text-decoration:none;font-size:13px;">✉️ ${c.email}</a>
+        <a href="${c.instagram}" target="_blank" style="color:#c13584;text-decoration:none;font-size:13px;">📷 Instagram</a>
+        <a href="${c.behance}"   target="_blank" style="color:#1769ff;text-decoration:none;font-size:13px;">🎨 Behance</a>
+      </div>`,
+    photos: [],
+    position: { x: 0, y: 0 }
+  };
+  openProject(fake);
+}
+
+/* ═══════════════════════════════════════════
+   BREAKOUT 게임
+   ═══════════════════════════════════════════ */
+function openBreakout() {
+  const id = '__breakout__';
+  if (windows[id]) { restoreWindow(id); return; }
+
+  const W = 480, H = 520;
+  const layer = document.getElementById('window-layer');
+  const win = document.createElement('div');
+  win.className = 'window';
+  win.id = 'win-' + id;
+  win.style.cssText = `
+    width:${W+2}px; height:${H+42}px;
+    left:${Math.max(20,(window.innerWidth-W)/2)}px;
+    top:${Math.max(20,(window.innerHeight-H-42)/2)}px;
+    z-index:${++topZ}; pointer-events:all;
+    border-radius:12px; overflow:hidden;
+  `;
+  win.innerHTML = `
+    <div class="window-titlebar" id="tb-${id}" style="cursor:move;">
+      <button class="traffic-btn btn-close" onclick="closeWindow('${id}')"></button>
+      <button class="traffic-btn btn-min"   onclick="minimizeWindow('${id}')"></button>
+      <button class="traffic-btn btn-max"   onclick="maximizeWindow('${id}')"></button>
+      <div class="window-title">Breakout  <span style="font-size:10px;color:rgba(255,255,255,0.3);">— Steve Jobs & Woz, 1976</span></div>
+    </div>
+    <canvas id="breakout-canvas" width="${W}" height="${H}"
+      style="display:block;background:#0d0d14;cursor:none;"></canvas>`;
+
+  win.addEventListener('mousedown', () => bringToFront(id));
+  makeWindowDraggable(win, id);
+  layer.appendChild(win);
+  windows[id] = { el: win, z: topZ };
+  initBreakout(W, H);
+}
+
+function initBreakout(CW, CH) {
+  const canvas = document.getElementById('breakout-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // ── 상수 ──
+  const PAD_W = 80, PAD_H = 10, PAD_Y = CH - 36;
+  const BALL_R = 7;
+  const BRICK_COLS = 10, BRICK_ROWS = 6;
+  const BRICK_W = (CW - 24) / BRICK_COLS;
+  const BRICK_H = 18, BRICK_GAP = 4;
+  const BRICK_TOP = 48;
+
+  const ROW_COLORS = [
+    ['#ff453a','#ff6b63'],
+    ['#ff9f0a','#ffb340'],
+    ['#ffd60a','#ffe566'],
+    ['#30d158','#5de880'],
+    ['#0a84ff','#40a9ff'],
+    ['#bf5af2','#d07ef7'],
+  ];
+
+  // ── 상태 ──
+  let bricks, ball, pad, lives, score, level, state, raf;
+
+  function reset(keepLevel) {
+    if (!keepLevel) { level = 1; lives = 3; score = 0; }
+    bricks = [];
+    for (let r = 0; r < BRICK_ROWS; r++) {
+      for (let c = 0; c < BRICK_COLS; c++) {
+        bricks.push({
+          x: 12 + c * BRICK_W, y: BRICK_TOP + r * (BRICK_H + BRICK_GAP),
+          w: BRICK_W - BRICK_GAP, h: BRICK_H,
+          color: ROW_COLORS[r], alive: true, pts: (BRICK_ROWS - r) * 10
+        });
+      }
+    }
+    const spd = 4 + level * 0.5;
+    ball = { x: CW/2, y: PAD_Y - 30, vx: (Math.random()>0.5?1:-1)*spd*0.7, vy: -spd };
+    pad  = { x: CW/2 - PAD_W/2, surge: 0, surgePhase: 0, cooldown: 0 };
+    state = 'ready'; // ready → playing → dead → win
+  }
+
+  function start() { if (state === 'ready' || state === 'dead') state = 'playing'; }
+
+  // ── 마우스 ──
+  const SURGE_DIST = 26, SURGE_SPD = 3.5, RETRACT_SPD = 2.5;
+  let mouseX = CW/2;
+  canvas.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    mouseX = e.clientX - r.left;
+  });
+  canvas.addEventListener('mousedown', e => {
+    if (state !== 'playing') { start(); return; }
+    if (pad.cooldown <= 0 && pad.surgePhase === 0) {
+      pad.surgePhase = 1; // 올라가기 시작
+    }
+  });
+  canvas.addEventListener('click', start);
+  canvas.addEventListener('keydown', start);
+
+  // ── 충돌 ──
+  function ballHitRect(bx, by, rx, ry, rw, rh) {
+    return bx + BALL_R > rx && bx - BALL_R < rx+rw &&
+           by + BALL_R > ry && by - BALL_R < ry+rh;
+  }
+
+  // ── 그리기 ──
+  function drawRoundRect(x, y, w, h, r, fill) {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, r);
+    ctx.fillStyle = fill; ctx.fill();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, CW, CH);
+
+    // 배경 그라디언트
+    const bg = ctx.createLinearGradient(0,0,0,CH);
+    bg.addColorStop(0,'#0d0d18'); bg.addColorStop(1,'#0a0a10');
+    ctx.fillStyle = bg; ctx.fillRect(0,0,CW,CH);
+
+    // 벽돌
+    bricks.forEach(b => {
+      if (!b.alive) return;
+      const g = ctx.createLinearGradient(b.x, b.y, b.x, b.y+b.h);
+      g.addColorStop(0, b.color[1]); g.addColorStop(1, b.color[0]);
+      drawRoundRect(b.x, b.y, b.w, b.h, 4, g);
+      // 하이라이트
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.fillRect(b.x+2, b.y+2, b.w-4, 3);
+    });
+
+    // 패들
+    const padDrawY = PAD_Y - pad.surge;
+    const surgeRatio = pad.surge / SURGE_DIST; // 0~1
+    const padR = 255, padG = Math.round(255 - surgeRatio * 80), padB = Math.round(255 - surgeRatio * 180);
+    const pg = ctx.createLinearGradient(pad.x, padDrawY, pad.x, padDrawY + PAD_H);
+    pg.addColorStop(0, `rgb(${padR},${padG},${padB})`);
+    pg.addColorStop(1, `rgb(${Math.round(padR*0.65)},${Math.round(padG*0.65)},${Math.round(padB*0.65)})`);
+    drawRoundRect(pad.x, padDrawY, PAD_W, PAD_H, 5, pg);
+    // 쿨다운 게이지 (패들 아래 얇은 바)
+    if (pad.cooldown > 0) {
+      const maxCd = 40, cdRatio = pad.cooldown / maxCd;
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.fillRect(pad.x, PAD_Y + PAD_H + 3, PAD_W, 3);
+      ctx.fillStyle = '#0a84ff';
+      ctx.fillRect(pad.x, PAD_Y + PAD_H + 3, PAD_W * (1 - cdRatio), 3);
+    }
+
+    // 공
+    const ballG = ctx.createRadialGradient(ball.x-2, ball.y-2, 1, ball.x, ball.y, BALL_R);
+    ballG.addColorStop(0,'#ffffff'); ballG.addColorStop(1,'#aad4ff');
+    ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI*2);
+    ctx.fillStyle = ballG; ctx.fill();
+
+    // HUD
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '12px -apple-system, Inter, sans-serif';
+    ctx.textAlign = 'left';  ctx.fillText(`SCORE  ${score}`, 12, 28);
+    ctx.textAlign = 'center';ctx.fillText(`LEVEL ${level}`, CW/2, 28);
+    ctx.textAlign = 'right'; ctx.fillText('♥'.repeat(Math.max(0, lives)), CW-12, 28);
+
+    // 커서
+    ctx.beginPath(); ctx.arc(mouseX, CH-8, 3, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fill();
+
+    // 오버레이
+    if (state === 'ready') {
+      overlay('BREAKOUT', '클릭하면 시작', '#0a84ff');
+    } else if (state === 'dead' && lives > 0) {
+      overlay('MISS', '클릭하면 재시작', '#ff453a');
+    } else if (state === 'dead' && lives <= 0) {
+      overlay('GAME OVER', `Score: ${score}  |  클릭하면 처음부터`, '#ff453a');
+    } else if (state === 'win') {
+      overlay(`LEVEL ${level} CLEAR!`, `Score: ${score}  |  클릭하면 다음 레벨`, '#30d158');
+    }
+  }
+
+  function overlay(title, sub, color) {
+    ctx.fillStyle = 'rgba(0,0,0,0.62)'; ctx.fillRect(0,0,CW,CH);
+    ctx.textAlign = 'center';
+    ctx.font = `bold 32px -apple-system, Inter, sans-serif`;
+    ctx.fillStyle = color; ctx.fillText(title, CW/2, CH/2 - 24);
+    ctx.font = '13px -apple-system, Inter, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fillText(sub, CW/2, CH/2 + 8);
+    // 재시작 버튼
+    const bw = 120, bh = 32, bx = CW/2 - bw/2, by = CH/2 + 28;
+    ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 8);
+    ctx.fillStyle = color + '33'; ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = color; ctx.font = 'bold 13px -apple-system, Inter, sans-serif';
+    ctx.fillText('다시 시작', CW/2, by + 21);
+  }
+
+  // 공 각도 보정 — 수평에 너무 가까우면 vy를 최소치로 올림
+  function clampBallAngle() {
+    const spd = Math.hypot(ball.vx, ball.vy);
+    const MIN_VY_RATIO = 0.28; // 전체 속도의 28% 이상은 수직이어야 함
+    if (Math.abs(ball.vy) < spd * MIN_VY_RATIO) {
+      const sign = ball.vy <= 0 ? -1 : 1;
+      ball.vy = sign * spd * MIN_VY_RATIO;
+      ball.vx = (ball.vx < 0 ? -1 : 1) * Math.sqrt(spd * spd - ball.vy * ball.vy);
+    }
+  }
+
+  // ── 업데이트 ──
+  function update() {
+    if (state !== 'playing') return;
+
+    // 패들 이동
+    pad.x = Math.max(0, Math.min(CW - PAD_W, mouseX - PAD_W/2));
+
+    // surge 애니메이션 (up=1 올라가는 중, down=2 내려오는 중)
+    if (pad.surgePhase === 1) {
+      pad.surge += SURGE_SPD;
+      if (pad.surge >= SURGE_DIST) { pad.surge = SURGE_DIST; pad.surgePhase = 2; }
+    } else if (pad.surgePhase === 2) {
+      pad.surge -= RETRACT_SPD;
+      if (pad.surge <= 0) { pad.surge = 0; pad.surgePhase = 0; pad.cooldown = 40; }
+    }
+    if (pad.cooldown > 0) pad.cooldown--;
+
+    // 공 이동 (이전 위치 저장 → 충돌 면 판별에 사용)
+    const prevBX = ball.x, prevBY = ball.y;
+    ball.x += ball.vx; ball.y += ball.vy;
+
+    // 벽 반사
+    if (ball.x - BALL_R < 0)   { ball.x = BALL_R;      ball.vx = Math.abs(ball.vx); }
+    if (ball.x + BALL_R > CW)  { ball.x = CW-BALL_R;   ball.vx = -Math.abs(ball.vx); }
+    if (ball.y - BALL_R < 0)   { ball.y = BALL_R;      ball.vy = Math.abs(ball.vy); }
+
+    // 패들 충돌 (surge 위치 반영)
+    const padDrawY = PAD_Y - pad.surge;
+    if (ballHitRect(ball.x, ball.y, pad.x, padDrawY, PAD_W, PAD_H) && ball.vy > 0) {
+      const hit = (ball.x - (pad.x + PAD_W/2)) / (PAD_W/2);
+      const spd = Math.hypot(ball.vx, ball.vy);
+      // hit를 ±0.8로 제한해서 각도가 너무 수평이 되지 않도록
+      const clampedHit = Math.max(-0.8, Math.min(0.8, hit));
+      ball.vx = clampedHit * spd * 1.1;
+      ball.vy = -Math.sqrt(Math.max(0, spd * spd - ball.vx * ball.vx));
+      ball.y = padDrawY - BALL_R;
+    }
+
+    // 각도 보정 — |vy|가 전체 속도의 25% 미만이면 강제로 올림
+    clampBallAngle();
+
+    // 낙사
+    if (ball.y + BALL_R > CH) {
+      lives = Math.max(0, lives - 1);
+      if (lives <= 0) { state = 'dead'; return; }
+      state = 'dead';
+      // 남은 목숨 있으면 ready 상태 대신 dead로 유지하고 클릭 시 공만 리셋
+      ball = { x: CW/2, y: PAD_Y-30, vx: (Math.random()>0.5?1:-1)*3.5, vy: -(4+level*0.5) };
+      return;
+    }
+
+    // 벽돌 충돌 — axis of least penetration으로 정확한 면 판별
+    let cleared = true;
+    for (const b of bricks) {
+      if (!b.alive) continue;
+      cleared = false;
+      if (!ballHitRect(ball.x, ball.y, b.x, b.y, b.w, b.h)) continue;
+      b.alive = false;
+      score += b.pts;
+
+      // 이전 프레임에서 X/Y 방향으로 벽돌 바깥에 있었는지 확인
+      const prevOutX = prevBX + BALL_R <= b.x || prevBX - BALL_R >= b.x + b.w;
+      const prevOutY = prevBY + BALL_R <= b.y || prevBY - BALL_R >= b.y + b.h;
+
+      if (prevOutX && !prevOutY) {
+        // X 방향으로 진입 → 옆면
+        ball.vx *= -1;
+      } else if (prevOutY && !prevOutX) {
+        // Y 방향으로 진입 → 위/아래
+        ball.vy *= -1;
+      } else {
+        // 코너 동시 진입 → overlap 기준
+        const overlapL = (ball.x + BALL_R) - b.x;
+        const overlapR = (b.x + b.w) - (ball.x - BALL_R);
+        const overlapT = (ball.y + BALL_R) - b.y;
+        const overlapB = (b.y + b.h) - (ball.y - BALL_R);
+        if (Math.min(overlapL, overlapR) < Math.min(overlapT, overlapB)) ball.vx *= -1;
+        else ball.vy *= -1;
+      }
+      break;
+    }
+    if (cleared) {
+      level++;
+      state = 'win';
+    }
+  }
+
+  // ── 오버레이 클릭 처리 ──
+  canvas.addEventListener('click', () => {
+    if (state === 'win') { reset(true); state = 'playing'; }
+    else if (state === 'dead' && lives <= 0) { reset(false); state = 'ready'; }
+    else if (state === 'dead') { state = 'playing'; }
+  });
+
+  // ── 루프 ──
+  function loop() {
+    // 창이 사라지면 루프 종료
+    if (!document.getElementById('win-__breakout__')) return;
+    update(); draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  reset(false);
+  loop();
+}
+
+/* ═══════════════════════════════════════════
+   사과게임
+   드래그로 사각형 선택 → 합이 10이면 제거
+   ═══════════════════════════════════════════ */
+function openAppleGame() {
+  const id = '__apple__';
+  if (windows[id]) { restoreWindow(id); return; }
+
+  const COLS = 17, ROWS = 10;
+  const CELL = 38, PAD = 10;
+  const CW = COLS * CELL + PAD * 2;
+  const CH = ROWS * CELL + PAD * 2 + 52; // 52 = HUD
+  const TIME_LIMIT = 120;
+
+  const layer = document.getElementById('window-layer');
+  const win = document.createElement('div');
+  win.className = 'window';
+  win.id = 'win-' + id;
+  win.style.cssText = `
+    width:${CW+2}px; height:${CH+42}px;
+    left:${Math.max(20,(window.innerWidth-CW)/2)}px;
+    top:${Math.max(20,(window.innerHeight-CH-42)/2)}px;
+    z-index:${++topZ}; pointer-events:all;
+    border-radius:12px; overflow:hidden;
+  `;
+  win.innerHTML = `
+    <div class="window-titlebar" id="tb-${id}" style="cursor:move;">
+      <button class="traffic-btn btn-close" onclick="closeWindow('${id}')"></button>
+      <button class="traffic-btn btn-min"   onclick="minimizeWindow('${id}')"></button>
+      <button class="traffic-btn btn-max"   onclick="maximizeWindow('${id}')"></button>
+      <div class="window-title">사과게임</div>
+    </div>
+    <canvas id="apple-canvas" width="${CW}" height="${CH}"
+      style="display:block;background:#1a0f0a;cursor:crosshair;"></canvas>`;
+
+  win.addEventListener('mousedown', () => bringToFront(id));
+  makeWindowDraggable(win, id);
+  layer.appendChild(win);
+  windows[id] = { el: win, z: topZ };
+  initAppleGame(COLS, ROWS, CELL, PAD, CW, CH, TIME_LIMIT);
+}
+
+function initAppleGame(COLS, ROWS, CELL, PAD, CW, CH, TIME_LIMIT) {
+  const canvas = document.getElementById('apple-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const HUD_H = 52;
+  const GRID_TOP = HUD_H;
+
+  // ── 상태 ──
+  let grid, score, timeLeft, state, sel, raf, lastTick;
+
+  function newGrid() {
+    const g = [];
+    for (let r = 0; r < ROWS; r++) {
+      g.push([]);
+      for (let c = 0; c < COLS; c++)
+        g[r].push(Math.ceil(Math.random() * 9));
+    }
+    return g;
+  }
+
+  function reset() {
+    grid = newGrid();
+    score = 0; timeLeft = TIME_LIMIT;
+    state = 'playing'; sel = null; lastTick = Date.now();
+  }
+
+  // 선택 영역의 합
+  function selSum() {
+    if (!sel) return 0;
+    const r1 = Math.min(sel.r0, sel.r1), r2 = Math.max(sel.r0, sel.r1);
+    const c1 = Math.min(sel.c0, sel.c1), c2 = Math.max(sel.c0, sel.c1);
+    let s = 0;
+    for (let r = r1; r <= r2; r++)
+      for (let c = c1; c <= c2; c++)
+        if (grid[r][c]) s += grid[r][c];
+    return s;
+  }
+
+  function removeSelection() {
+    if (!sel) return;
+    const r1 = Math.min(sel.r0, sel.r1), r2 = Math.max(sel.r0, sel.r1);
+    const c1 = Math.min(sel.c0, sel.c1), c2 = Math.max(sel.c0, sel.c1);
+    let cnt = 0;
+    for (let r = r1; r <= r2; r++)
+      for (let c = c1; c <= c2; c++)
+        if (grid[r][c]) { grid[r][c] = 0; cnt++; }
+    score += cnt;
+  }
+
+  // 픽셀 → 그리드 좌표
+  function toCell(px, py) {
+    const c = Math.floor((px - PAD) / CELL);
+    const r = Math.floor((py - GRID_TOP - PAD) / CELL);
+    return { r, c };
+  }
+
+  // ── 마우스 ──
+  let dragging = false, mousePos = {x:0,y:0};
+
+  canvas.addEventListener('mousedown', e => {
+    if (state !== 'playing') { reset(); return; }
+    const rect = canvas.getBoundingClientRect();
+    const px = e.clientX - rect.left, py = e.clientY - rect.top;
+    const { r, c } = toCell(px, py);
+    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
+    dragging = true;
+    sel = { r0: r, c0: c, r1: r, c1: c };
+    e.stopPropagation();
+  });
+
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    mousePos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    if (!dragging || !sel) return;
+    const { r, c } = toCell(mousePos.x, mousePos.y);
+    sel.r1 = Math.max(0, Math.min(ROWS-1, r));
+    sel.c1 = Math.max(0, Math.min(COLS-1, c));
+  });
+
+  canvas.addEventListener('mouseup', () => {
+    if (dragging && sel) {
+      if (selSum() === 10) removeSelection();
+      sel = null;
+    }
+    dragging = false;
+  });
+
+  canvas.addEventListener('mouseleave', () => { dragging = false; sel = null; });
+
+  // ── 그리기 ──
+  const APPLE_COLORS = {
+    1:'#ff6b6b', 2:'#ff9f43', 3:'#ffd32a', 4:'#0be881',
+    5:'#0fbcf9', 6:'#f53b57', 7:'#cd84f1', 8:'#ffdd59', 9:'#ff4d4d'
+  };
+
+  function drawApple(cx, cy, n, dimmed) {
+    const R = CELL / 2 - 4;
+    // 사과 원
+    const g = ctx.createRadialGradient(cx-R*0.3, cy-R*0.3, R*0.1, cx, cy, R);
+    const base = APPLE_COLORS[n] || '#ff4444';
+    g.addColorStop(0, dimmed ? '#333' : lighten(base, 40));
+    g.addColorStop(1, dimmed ? '#222' : base);
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2);
+    ctx.fillStyle = g; ctx.fill();
+    // 꼭지
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - R);
+    ctx.quadraticCurveTo(cx+5, cy-R-7, cx+3, cy-R-4);
+    ctx.strokeStyle = dimmed ? '#444' : '#5d4037';
+    ctx.lineWidth = 1.5; ctx.stroke();
+    // 숫자
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `bold ${R > 14 ? 15 : 12}px -apple-system, Inter, sans-serif`;
+    ctx.fillStyle = dimmed ? '#555' : 'rgba(0,0,0,0.75)';
+    ctx.fillText(n, cx, cy + 1);
+  }
+
+  function lighten(hex, amt) {
+    const n = parseInt(hex.slice(1), 16);
+    const r = Math.min(255, (n>>16)+amt);
+    const g = Math.min(255, ((n>>8)&0xff)+amt);
+    const b = Math.min(255, (n&0xff)+amt);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function draw() {
+    // 배경
+    ctx.fillStyle = '#1a0f0a'; ctx.fillRect(0,0,CW,CH);
+
+    // HUD 배경
+    ctx.fillStyle = '#120a06'; ctx.fillRect(0,0,CW,HUD_H);
+    ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(0,HUD_H-1,CW,1);
+
+    // 점수
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ff9f43'; ctx.font = 'bold 20px -apple-system, Inter, sans-serif';
+    ctx.fillText(score, PAD, HUD_H/2);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '11px -apple-system, Inter, sans-serif';
+    ctx.fillText('점', PAD + ctx.measureText(score).width + 30, HUD_H/2);
+
+    // 타이머 바
+    const barW = CW - PAD*2 - 60;
+    const barX = PAD + 55, barY = HUD_H/2 - 6;
+    ctx.fillStyle = '#2a1a0e'; ctx.beginPath();
+    ctx.roundRect(barX, barY, barW, 12, 6); ctx.fill();
+    const ratio = Math.max(0, timeLeft / TIME_LIMIT);
+    const barColor = ratio > 0.5 ? '#30d158' : ratio > 0.25 ? '#ffd60a' : '#ff453a';
+    ctx.fillStyle = barColor; ctx.beginPath();
+    ctx.roundRect(barX, barY, barW * ratio, 12, 6); ctx.fill();
+    ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '11px -apple-system, Inter, sans-serif';
+    ctx.fillText(Math.ceil(timeLeft) + 's', CW - PAD, HUD_H/2);
+
+    // 선택 영역 계산
+    const selR1 = sel ? Math.min(sel.r0, sel.r1) : -1;
+    const selR2 = sel ? Math.max(sel.r0, sel.r1) : -1;
+    const selC1 = sel ? Math.min(sel.c0, sel.c1) : -1;
+    const selC2 = sel ? Math.max(sel.c0, sel.c1) : -1;
+    const sum = selSum();
+
+    // 그리드
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const n = grid[r][c];
+        const cx = PAD + c * CELL + CELL/2;
+        const cy = GRID_TOP + PAD + r * CELL + CELL/2;
+        const inSel = sel && r>=selR1 && r<=selR2 && c>=selC1 && c<=selC2;
+
+        if (inSel && n) {
+          // 선택 하이라이트
+          ctx.fillStyle = sum === 10 ? 'rgba(48,209,88,0.25)' : 'rgba(255,255,255,0.1)';
+          ctx.beginPath(); ctx.roundRect(PAD+c*CELL+2, GRID_TOP+PAD+r*CELL+2, CELL-4, CELL-4, 6);
+          ctx.fill();
+        }
+        if (n) drawApple(cx, cy, n, false);
+      }
+    }
+
+    // 선택 테두리
+    if (sel) {
+      const sx = PAD + selC1 * CELL + 2;
+      const sy = GRID_TOP + PAD + selR1 * CELL + 2;
+      const sw = (selC2 - selC1 + 1) * CELL - 4;
+      const sh = (selR2 - selR1 + 1) * CELL - 4;
+      ctx.strokeStyle = sum === 10 ? '#30d158' : 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 2; ctx.beginPath();
+      ctx.roundRect(sx, sy, sw, sh, 6); ctx.stroke();
+      // 합 표시
+      if (sum > 0) {
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = sum === 10 ? '#30d158' : 'rgba(255,255,255,0.7)';
+        ctx.font = `bold 13px -apple-system, Inter, sans-serif`;
+        ctx.fillText(`= ${sum}`, sx + sw/2, sy - 10);
+      }
+    }
+
+    // 오버레이
+    if (state === 'over') {
+      ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0,0,CW,CH);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = 'bold 28px -apple-system, Inter, sans-serif';
+      ctx.fillStyle = '#ff9f43'; ctx.fillText('TIME OUT!', CW/2, CH/2 - 28);
+      ctx.font = '15px -apple-system, Inter, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.fillText(`최종 점수: ${score}점`, CW/2, CH/2 + 4);
+      // 버튼
+      const bw = 130, bh = 34;
+      const bx = CW/2 - bw/2, by = CH/2 + 30;
+      ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 8);
+      ctx.fillStyle = 'rgba(255,159,67,0.2)'; ctx.fill();
+      ctx.strokeStyle = '#ff9f43'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = '#ff9f43'; ctx.font = 'bold 13px -apple-system, Inter, sans-serif';
+      ctx.fillText('다시 시작', CW/2, by + bh/2);
+    }
+  }
+
+  // ── 타이머 ──
+  function tick() {
+    if (state === 'playing') {
+      const now = Date.now();
+      timeLeft -= (now - lastTick) / 1000;
+      lastTick = now;
+      if (timeLeft <= 0) { timeLeft = 0; state = 'over'; }
+    }
+  }
+
+  // ── 루프 ──
+  function loop() {
+    if (!document.getElementById('win-__apple__')) return;
+    tick(); draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  reset();
+  loop();
+}
+
+/* ═══════════════════════════════════════════
+   라이트박스
+   ═══════════════════════════════════════════ */
+function openLightboxById(projectId, index) {
+  const p = CONTENT.projects.find(p => p.id === projectId);
+  const photos = (p && p.photos && p.photos.length) ? p.photos : [];
+  // index -1 이면 thumbnail을 단독으로 표시
+  if (index === -1) {
+    const thumb = p && p.thumbnail;
+    openLightbox(thumb ? [thumb] : [], 0);
+  } else {
+    openLightbox(photos, index);
+  }
+}
+
+function openLightbox(photos, index) {
+  lbPhotos = photos; lbIndex = index;
+  updateLightbox();
+  document.getElementById('lightbox').classList.add('active');
+}
+
+function updateLightbox() {
+  const img = document.getElementById('lb-img');
+  const ph  = document.getElementById('lb-placeholder');
+  const counter = document.getElementById('lb-counter');
+  const prev = document.getElementById('lb-prev');
+  const next = document.getElementById('lb-next');
+  const hasSrc = lbPhotos.length > 0 && lbPhotos[lbIndex];
+
+  if (hasSrc) {
+    img.src = lbPhotos[lbIndex];
+    img.style.display = 'block';
+    ph.style.display = 'none';
+  } else {
+    img.src = ''; img.style.display = 'none';
+    ph.style.display = 'flex';
+  }
+
+  const total = lbPhotos.length || 0;
+  counter.textContent = total > 1 ? `${lbIndex + 1} / ${total}` : '';
+  prev.classList.toggle('hidden', total <= 1);
+  next.classList.toggle('hidden', total <= 1);
+}
+
+function closeLightbox() {
+  const lb = document.getElementById('lightbox');
+  document.getElementById('lb-img-wrap').style.transform = 'scale(0.88)';
+  document.getElementById('lb-img-wrap').style.opacity = '0';
+  setTimeout(() => {
+    lb.classList.remove('active');
+    document.getElementById('lb-img-wrap').style.transform = '';
+    document.getElementById('lb-img-wrap').style.opacity = '';
+  }, 180);
+}
+
+function lbMove(dir) {
+  if (!lbPhotos.length) return;
+  lbIndex = (lbIndex + dir + lbPhotos.length) % lbPhotos.length;
+  updateLightbox();
+}
+
+// 배경 클릭으로 닫기
+document.getElementById('lightbox').addEventListener('click', e => {
+  if (e.target === document.getElementById('lightbox')) closeLightbox();
+});
+
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('lightbox').classList.contains('active')) return;
+  if (e.key === 'ArrowLeft')  lbMove(-1);
+  if (e.key === 'ArrowRight') lbMove(1);
+  if (e.key === 'Escape')     closeLightbox();
+});
+
+/* ─── 시작 ─── */
+init();
+</script>
+</body>
+</html>

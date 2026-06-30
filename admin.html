@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Portfolio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #0f0f0f; color: #e5e5e5; }
+
+    /* ── 로그인 ── */
+    #login-screen {
+      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: #0f0f0f; z-index: 999;
+    }
+    #login-screen.hidden { display: none; }
+    .login-box {
+      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 14px;
+      padding: 40px 48px; width: 360px; text-align: center;
+    }
+    .login-box h1 { font-size: 18px; font-weight: 600; margin-bottom: 6px; color: #fff; }
+    .login-box p  { font-size: 12px; color: #666; margin-bottom: 24px; }
+    .login-input {
+      width: 100%; background: #111; border: 1px solid #333; border-radius: 8px;
+      padding: 10px 14px; font-size: 14px; color: #e5e5e5; outline: none;
+      margin-bottom: 12px; transition: border-color 0.15s;
+    }
+    .login-input:focus { border-color: #555; }
+    .login-btn {
+      width: 100%; background: #2563eb; color: white; border: none;
+      border-radius: 8px; padding: 10px; font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .login-btn:hover { background: #1d4ed8; }
+    .login-error { color: #ef4444; font-size: 12px; margin-top: 8px; display: none; }
+
+    /* ── 레이아웃 ── */
+    #app { display: flex; height: 100vh; }
+    #app.hidden { display: none; }
+
+    /* 사이드바 */
+    #sidebar {
+      width: 220px; min-width: 220px; background: #141414;
+      border-right: 1px solid #222; display: flex; flex-direction: column;
+      padding: 20px 0;
+    }
+    .sidebar-logo { padding: 0 20px 20px; border-bottom: 1px solid #222; margin-bottom: 12px; }
+    .sidebar-logo .title { font-size: 14px; font-weight: 600; color: #fff; }
+    .sidebar-logo .sub   { font-size: 11px; color: #555; margin-top: 2px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 20px; font-size: 13px; color: #888; cursor: pointer;
+      border-radius: 0; transition: background 0.1s, color 0.1s;
+      border-left: 2px solid transparent;
+    }
+    .nav-item:hover { background: #1e1e1e; color: #ccc; }
+    .nav-item.active { background: #1e1e1e; color: #fff; border-left-color: #2563eb; }
+    .nav-item .icon { font-size: 15px; width: 18px; text-align: center; }
+
+    .sidebar-bottom {
+      margin-top: auto; padding: 16px 20px;
+      border-top: 1px solid #222;
+    }
+    .logout-btn {
+      width: 100%; background: none; border: 1px solid #333; border-radius: 7px;
+      color: #666; padding: 7px; font-size: 12px; cursor: pointer; transition: all 0.15s;
+    }
+    .logout-btn:hover { border-color: #555; color: #aaa; }
+
+    /* 메인 콘텐츠 */
+    #main { flex: 1; overflow-y: auto; padding: 32px 36px; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+    .page-header h2 { font-size: 20px; font-weight: 600; color: #fff; }
+
+    /* 버튼 공통 */
+    .btn { padding: 8px 16px; border-radius: 7px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #1e1e1e; color: #aaa; border: 1px solid #333; }
+    .btn-secondary:hover { background: #252525; color: #ddd; }
+    .btn-danger { background: #1e1e1e; color: #ef4444; border: 1px solid #3a1818; }
+    .btn-danger:hover { background: #2a1515; }
+    .btn-success { background: #166534; color: #4ade80; border: 1px solid #14532d; }
+    .btn-success:hover { background: #15803d; }
+
+    /* 프로젝트 카드 리스트 */
+    .project-list { display: flex; flex-direction: column; gap: 10px; }
+    .project-card {
+      background: #1a1a1a; border: 1px solid #252525; border-radius: 10px;
+      padding: 14px 18px; display: flex; align-items: center; gap: 14px;
+      cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    }
+    .project-card:hover { border-color: #333; background: #1e1e1e; }
+    .project-card.selected { border-color: #2563eb; background: #162040; }
+    .project-card .thumb {
+      width: 52px; height: 42px; border-radius: 6px; background: #2a2a2a;
+      object-fit: cover; flex-shrink: 0; display: flex; align-items: center;
+      justify-content: center; font-size: 20px;
+    }
+    .project-card .thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+    .project-card .info { flex: 1; min-width: 0; }
+    .project-card .info .ptitle { font-size: 13px; font-weight: 500; color: #e5e5e5; }
+    .project-card .info .pmeta  { font-size: 11px; color: #555; margin-top: 2px; }
+    .project-card .actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.15s; }
+    .project-card:hover .actions { opacity: 1; }
+
+    /* 편집 패널 */
+    #edit-panel {
+      position: fixed; right: 0; top: 0; bottom: 0; width: 420px;
+      background: #141414; border-left: 1px solid #222;
+      display: flex; flex-direction: column;
+      transform: translateX(100%); transition: transform 0.2s ease;
+      z-index: 50;
+    }
+    #edit-panel.open { transform: translateX(0); }
+    .panel-header {
+      padding: 20px 24px; border-bottom: 1px solid #222;
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .panel-header h3 { font-size: 15px; font-weight: 600; color: #fff; }
+    .panel-close { background: none; border: none; color: #555; font-size: 22px; cursor: pointer; line-height: 1; padding: 0; }
+    .panel-close:hover { color: #aaa; }
+    .panel-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+    /* 폼 요소 */
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 11px; color: #666; margin-bottom: 5px; display: block; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 7px;
+      padding: 8px 12px; font-size: 13px; color: #e5e5e5; outline: none;
+      transition: border-color 0.15s; font-family: inherit;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #2563eb; }
+    .form-select { cursor: pointer; }
+    .form-select option { background: #1a1a1a; }
+    .form-textarea { resize: vertical; min-height: 72px; }
+
+    /* 이미지 파일 피커 */
+    .img-picker-wrap { display: flex; flex-direction: column; gap: 6px; }
+    .img-picker-row { display: flex; gap: 6px; align-items: center; }
+    .img-picker-row input { flex: 1; }
+    .pick-btn {
+      flex-shrink: 0; background: #222; border: 1px solid #333; border-radius: 6px;
+      color: #aaa; font-size: 11px; padding: 7px 10px; cursor: pointer;
+      white-space: nowrap; transition: all 0.15s;
+    }
+    .pick-btn:hover { background: #2a2a2a; color: white; border-color: #444; }
+    .img-preview-box {
+      width: 100%; height: 100px; border-radius: 7px; overflow: hidden;
+      background: #1a1a1a; border: 1px dashed #2a2a2a;
+      display: flex; align-items: center; justify-content: center;
+      color: #444; font-size: 12px; position: relative;
+    }
+    .img-preview-box img {
+      width: 100%; height: 100%; object-fit: cover;
+      position: absolute; inset: 0;
+    }
+    .img-preview-box.empty::before { content: '미리보기'; }
+
+    /* 사진 경로 목록 */
+    .photo-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .photo-row { display: flex; flex-direction: column; gap: 4px; padding: 8px; background: #1a1a1a; border: 1px solid #222; border-radius: 7px; }
+    .photo-row-top { display: flex; align-items: center; gap: 6px; }
+    .photo-row-top input { flex: 1; }
+    .photo-row .del-btn { background: none; border: none; color: #555; font-size: 16px; cursor: pointer; padding: 0 4px; flex-shrink: 0; }
+    .photo-row .del-btn:hover { color: #ef4444; }
+    .photo-thumb-preview {
+      width: 100%; height: 70px; border-radius: 5px; overflow: hidden;
+      background: #111; border: 1px dashed #222;
+      display: none; position: relative;
+    }
+    .photo-thumb-preview.visible { display: block; }
+    .photo-thumb-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .add-photo-btn {
+      margin-top: 6px; background: none; border: 1px dashed #333; border-radius: 6px;
+      color: #555; font-size: 12px; padding: 6px; width: 100%; cursor: pointer; transition: all 0.15s;
+    }
+    .add-photo-btn:hover { border-color: #555; color: #aaa; }
+
+    .panel-footer {
+      padding: 16px 24px; border-top: 1px solid #222; flex-shrink: 0;
+      display: flex; gap: 8px;
+    }
+
+    /* 기본 정보 섹션 */
+    .info-section { background: #1a1a1a; border: 1px solid #222; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+    .info-section h3 { font-size: 13px; font-weight: 600; color: #aaa; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* 카테고리 관리 */
+    .cat-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .cat-chip {
+      display: flex; align-items: center; gap: 6px;
+      background: #1e1e1e; border: 1px solid #2a2a2a; border-radius: 20px;
+      padding: 4px 12px 4px 14px; font-size: 12px; color: #aaa;
+    }
+    .cat-chip .del { background: none; border: none; color: #555; cursor: pointer; font-size: 14px; padding: 0; }
+    .cat-chip .del:hover { color: #ef4444; }
+
+    /* 하단 저장 바 */
+    #save-bar {
+      position: fixed; bottom: 0; left: 220px; right: 0;
+      background: #141414; border-top: 1px solid #222;
+      padding: 12px 36px; display: flex; align-items: center; justify-content: space-between;
+      z-index: 40;
+    }
+    .save-hint { font-size: 12px; color: #555; }
+    .save-hint span { color: #febc2e; }
+
+    /* 스크롤바 */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ── 로그인 ── -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>🔐 Admin</h1>
+    <p>포트폴리오 관리자 페이지</p>
+    <input class="login-input" type="password" id="pw-input" placeholder="비밀번호 입력"
+      onkeydown="if(event.key==='Enter')doLogin()" />
+    <button class="login-btn" onclick="doLogin()">로그인</button>
+    <div class="login-error" id="login-error">비밀번호가 틀렸습니다.</div>
+    <p style="font-size:11px;color:#444;margin-top:16px;">기본 비밀번호: <code style="color:#666;">admin1234</code></p>
+  </div>
+</div>
+
+<!-- ── 메인 앱 ── -->
+<div id="app" class="hidden">
+
+  <!-- 사이드바 -->
+  <div id="sidebar">
+    <div class="sidebar-logo">
+      <div class="title">Portfolio Admin</div>
+      <div class="sub">콘텐츠 관리</div>
+    </div>
+    <div class="nav-item active" onclick="showPage('projects')" id="nav-projects">
+      <span class="icon">🗂️</span> 프로젝트
+    </div>
+    <div class="nav-item" onclick="showPage('owner')" id="nav-owner">
+      <span class="icon">👤</span> 기본 정보
+    </div>
+    <div class="nav-item" onclick="showPage('categories')" id="nav-categories">
+      <span class="icon">🏷️</span> 카테고리
+    </div>
+    <div class="sidebar-bottom">
+      <button class="logout-btn" onclick="logout()">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- 메인 -->
+  <div id="main">
+
+    <!-- 프로젝트 목록 -->
+    <div class="page active" id="page-projects">
+      <div class="page-header">
+        <h2>프로젝트</h2>
+        <button class="btn btn-primary" onclick="newProject()">+ 프로젝트 추가</button>
+      </div>
+      <div class="project-list" id="project-list"></div>
+    </div>
+
+    <!-- 기본 정보 -->
+    <div class="page" id="page-owner">
+      <div class="page-header">
+        <h2>기본 정보</h2>
+      </div>
+      <div class="info-section">
+        <h3>프로필</h3>
+        <div class="form-group">
+          <label class="form-label">이름</label>
+          <input class="form-input" id="owner-name" oninput="syncOwner()" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bio</label>
+          <input class="form-input" id="owner-bio" oninput="syncOwner()" />
+        </div>
+      </div>
+      <div class="info-section">
+        <h3>연락처 / SNS</h3>
+        <div class="form-group">
+          <label class="form-label">이메일</label>
+          <input class="form-input" id="owner-email" type="email" oninput="syncOwner()" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Instagram URL</label>
+          <input class="form-input" id="owner-instagram" oninput="syncOwner()" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Behance URL</label>
+          <input class="form-input" id="owner-behance" oninput="syncOwner()" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 카테고리 -->
+    <div class="page" id="page-categories">
+      <div class="page-header">
+        <h2>카테고리</h2>
+      </div>
+      <div class="info-section">
+        <h3>카테고리 목록</h3>
+        <div class="cat-list" id="cat-list"></div>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <input class="form-input" id="new-cat-input" placeholder="새 카테고리 이름"
+            onkeydown="if(event.key==='Enter')addCategory()" style="flex:1;" />
+          <button class="btn btn-primary" onclick="addCategory()">추가</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:64px;"></div><!-- save-bar 여백 -->
+  </div>
+
+  <!-- 편집 패널 -->
+  <div id="edit-panel">
+    <div class="panel-header">
+      <h3 id="panel-title">프로젝트 편집</h3>
+      <button class="panel-close" onclick="closePanel()">×</button>
+    </div>
+    <div class="panel-body" id="panel-body"></div>
+    <div class="panel-footer">
+      <button class="btn btn-danger" id="panel-delete-btn" onclick="deleteCurrentProject()">삭제</button>
+      <div style="flex:1;"></div>
+      <button class="btn btn-secondary" onclick="closePanel()">취소</button>
+      <button class="btn btn-primary" onclick="saveCurrentProject()">저장</button>
+    </div>
+  </div>
+
+  <!-- 하단 저장 바 -->
+  <div id="save-bar">
+    <div class="save-hint">자동저장(안전장치) 켜짐 · 명시적으로 저장하려면 <span>저장</span> 버튼 사용</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-secondary" onclick="saveToLocal()" style="font-size:13px;padding:9px 20px;border-color:#444;">
+        💾 저장
+      </button>
+      <button class="btn btn-success" onclick="downloadJSON()" style="font-size:13px;padding:9px 20px;">
+        ⬇ JSON 다운로드
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   비밀번호 (로컬 전용, 서버 없음)
+   변경하려면 아래 ADMIN_PW 값을 수정
+   ═══════════════════════════════════════════ */
+const ADMIN_PW = '1';
+const SESSION_KEY = 'portfolio_admin_ok';
+
+/* ═══════════════════════════════════════════
+   상태
+   ═══════════════════════════════════════════ */
+const DATA_KEY = 'portfolio_data';
+
+// 기본 데이터 (localStorage에 없을 때만 사용)
+const DEFAULT_DATA = {
+  owner: {
+    name: "홍길동",
+    bio: "사진작가 / 비주얼 디렉터",
+    contact: { email: "hello@example.com", instagram: "https://instagram.com/username", behance: "https://behance.net/username" }
+  },
+  projects: [
+    { id:"project-01", title:"Dodo Pizza",   category:"브랜딩",    thumbnail:"", description:"도도 피자의 새로운 브랜드 아이덴티티를 담은 비주얼 캠페인.", photos:[], year:2024, position:{x:540,y:160} },
+    { id:"project-02", title:"Visamie",       category:"광고",      thumbnail:"", description:"글로벌 비자 서비스 플랫폼 Visamie의 광고 캠페인.",         photos:[], year:2024, position:{x:240,y:220} },
+    { id:"project-03", title:"Logofolio",     category:"브랜딩",    thumbnail:"", description:"다양한 클라이언트를 위해 제작한 로고 컬렉션.",              photos:[], year:2023, position:{x:880,y:190} },
+    { id:"project-04", title:"DALA CAMP",     category:"포트레이트",thumbnail:"", description:"야외 캠핑 브랜드 DALA CAMP의 라이프스타일 포트레이트.",    photos:[], year:2023, position:{x:200,y:510} },
+    { id:"project-05", title:"Megacampus",    category:"공간",      thumbnail:"", description:"교육 플랫폼 메가캠퍼스의 공간 촬영 프로젝트.",              photos:[], year:2024, position:{x:540,y:500} },
+    { id:"project-06", title:"Geely × Major", category:"광고",      thumbnail:"", description:"지리 자동차와 메이저 콜라보레이션 광고 캠페인.",            photos:[], year:2024, position:{x:880,y:470} },
+    { id:"project-07", title:"Skin.Club",     category:"브랜딩",    thumbnail:"", description:"게이밍 스킨 플랫폼 Skin.Club의 비주얼 아이덴티티.",        photos:[], year:2024, position:{x:1160,y:310} },
+    { id:"project-08", title:"DFC",           category:"광고",      thumbnail:"", description:"DFC 브랜드 광고 캠페인.",                                  photos:[], year:2023, position:{x:380,y:380} }
+  ],
+  categories: ["브랜딩", "광고", "포트레이트", "공간"]
+};
+
+// localStorage에서 불러오기, 없으면 기본값
+function loadData() {
+  try {
+    const saved = localStorage.getItem(DATA_KEY);
+    return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_DATA));
+  } catch { return JSON.parse(JSON.stringify(DEFAULT_DATA)); }
+}
+
+// 변경될 때마다 localStorage에 자동 저장
+function persistData() {
+  localStorage.setItem(DATA_KEY, JSON.stringify(DATA));
+}
+
+let DATA = loadData();
+let editingId = null;
+
+/* ═══════════════════════════════════════════
+   로그인
+   ═══════════════════════════════════════════ */
+function doLogin() {
+  const val = document.getElementById('pw-input').value;
+  if (val === ADMIN_PW) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    initApp();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('pw-input').value = '';
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+/* ═══════════════════════════════════════════
+   초기화
+   ═══════════════════════════════════════════ */
+function initApp() {
+  renderOwnerForm();
+  renderProjectList();
+  renderCategories();
+}
+
+// 세션 유지
+if (sessionStorage.getItem(SESSION_KEY) === '1') {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  initApp();
+}
+
+/* ═══════════════════════════════════════════
+   페이지 전환
+   ═══════════════════════════════════════════ */
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  closePanel();
+}
+
+/* ═══════════════════════════════════════════
+   프로젝트 목록
+   ═══════════════════════════════════════════ */
+function renderProjectList() {
+  const list = document.getElementById('project-list');
+  list.innerHTML = '';
+  DATA.projects.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'project-card' + (editingId === p.id ? ' selected' : '');
+    card.innerHTML = `
+      <div class="thumb">
+        ${p.thumbnail ? `<img src="${p.thumbnail}" alt="">` : '📁'}
+      </div>
+      <div class="info">
+        <div class="ptitle">${p.title}</div>
+        <div class="pmeta">${p.category} · ${p.year}</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px;"
+          onclick="event.stopPropagation();openEditPanel('${p.id}')">편집</button>
+      </div>`;
+    card.addEventListener('click', () => openEditPanel(p.id));
+    list.appendChild(card);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   편집 패널
+   ═══════════════════════════════════════════ */
+function openEditPanel(id) {
+  const p = DATA.projects.find(x => x.id === id);
+  if (!p) return;
+  editingId = id;
+  renderProjectList();
+
+  document.getElementById('panel-title').textContent = p.title || '새 프로젝트';
+  document.getElementById('panel-delete-btn').style.display = id.startsWith('__new') ? 'none' : '';
+
+  const cats = DATA.categories.map(c =>
+    `<option value="${c}" ${c === p.category ? 'selected' : ''}>${c}</option>`).join('');
+
+  const photoRows = (p.photos || []).map((src, i) => photoRowHTML(src, i)).join('');
+
+  document.getElementById('panel-body').innerHTML = `
+    <div class="form-group">
+      <label class="form-label">제목</label>
+      <input class="form-input" id="p-title" value="${esc(p.title)}" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">카테고리</label>
+      <select class="form-select" id="p-category">${cats}</select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">연도</label>
+      <input class="form-input" id="p-year" type="number" value="${p.year}" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">폴더 썸네일 (바탕화면 아이콘 이미지)
+        <span style="font-weight:400;color:#6b7280;font-size:11px;margin-left:6px;">권장 비율 16:9 (예: 1920×1080)</span>
+      </label>
+      <div class="img-picker-wrap">
+        <div class="img-picker-row">
+          <input class="form-input" id="p-thumbnail" value="${esc(p.thumbnail)}" placeholder="이미지 URL 또는 Google Drive 링크 붙여넣기"
+            oninput="updateThumbPreview()" />
+          <button class="pick-btn" onclick="pickThumb()">📁 찾기</button>
+          <button class="pick-btn" style="background:#1a73e8;border-color:#1a73e8;color:#fff;white-space:nowrap;" onclick="gdriveConvert('p-thumbnail', 'thumb-preview-box')">🔗 Drive</button>
+        </div>
+        <div class="img-preview-box ${p.thumbnail ? '' : 'empty'}" id="thumb-preview-box">
+          ${p.thumbnail ? `<img src="${esc(p.thumbnail)}" alt="">` : ''}
+        </div>
+      </div>
+      <input type="file" id="thumb-file-input" accept="image/*" style="display:none" onchange="onThumbFilePicked(this)" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">설명</label>
+      <textarea class="form-textarea" id="p-desc">${esc(p.description)}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">외부 링크 (선택)</label>
+      <input class="form-input" id="p-link" value="${esc(p.link||'')}" placeholder="https://behance.net/..." />
+    </div>
+    <div class="form-group">
+      <label class="form-label">사진 목록</label>
+      <div class="photo-list" id="photo-list">${photoRows}</div>
+      <button class="add-photo-btn" onclick="addPhotoRow()">+ 사진 추가</button>
+      <input type="file" id="photo-multi-input" accept="image/*" multiple style="display:none" onchange="onMultiPhotoPicked(this)" />
+      <button class="add-photo-btn" style="margin-top:4px;border-color:#2563eb;color:#4da3e8;" onclick="document.getElementById('photo-multi-input').click()">📁 파인더에서 여러 장 선택</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <input type="checkbox" id="p-visible" ${p.visible !== false ? 'checked' : ''}
+          style="width:15px;height:15px;accent-color:#2563eb;cursor:pointer;">
+        <span>바탕화면에 표시</span>
+      </label>
+      <label class="form-label">바탕화면 위치 (X · Y)</label>
+      <div style="display:flex;gap:8px;">
+        <input class="form-input" id="p-x" type="number" value="${p.position?.x ?? 400}" placeholder="X" />
+        <input class="form-input" id="p-y" type="number" value="${p.position?.y ?? 300}" placeholder="Y" />
+      </div>
+    </div>`;
+
+  document.getElementById('edit-panel').classList.add('open');
+}
+
+function photoRowHTML(src, i) {
+  const hasSrc = src && src.length > 0;
+  return `<div class="photo-row" id="photo-row-${i}">
+    <div class="photo-row-top">
+      <input class="form-input photo-src" value="${esc(src)}" placeholder="이미지 URL 또는 Google Drive 링크"
+        oninput="updatePhotoPreview(${i})" />
+      <button class="pick-btn" onclick="pickPhoto(${i})">📁</button>
+      <button class="pick-btn" style="background:#1a73e8;border-color:#1a73e8;color:#fff;" onclick="gdriveConvertPhoto(${i})">🔗</button>
+      <button class="del-btn" onclick="removePhotoRow(${i})">×</button>
+    </div>
+    <div class="photo-thumb-preview ${hasSrc ? 'visible' : ''}" id="photo-preview-${i}">
+      ${hasSrc ? `<img src="${esc(src)}" alt="">` : ''}
+    </div>
+    <input type="file" id="photo-file-${i}" accept="image/*" style="display:none" onchange="onPhotoFilePicked(this,${i})" />
+  </div>`;
+}
+
+function addPhotoRow() {
+  const list = document.getElementById('photo-list');
+  const i = list.children.length;
+  const div = document.createElement('div');
+  div.innerHTML = photoRowHTML('', i);
+  list.appendChild(div.firstElementChild);
+}
+
+function removePhotoRow(i) {
+  const row = document.getElementById('photo-row-' + i);
+  if (row) row.remove();
+}
+
+/* ── 파일 피커 ── */
+// 썸네일 파일 피커 열기
+function pickThumb() {
+  document.getElementById('thumb-file-input').click();
+}
+
+// 썸네일 파일 선택됨 → Base64 변환 후 저장
+function onThumbFilePicked(input) {
+  if (!input.files[0]) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const base64 = e.target.result;
+    // 경로 입력란에 base64 저장
+    const pathInput = document.getElementById('p-thumbnail');
+    pathInput.value = base64;
+    // 미리보기 업데이트
+    const box = document.getElementById('thumb-preview-box');
+    box.classList.remove('empty');
+    box.innerHTML = `<img src="${base64}" alt="">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+// 썸네일 경로 직접 입력 시 미리보기 업데이트
+function updateThumbPreview() {
+  const val = document.getElementById('p-thumbnail').value.trim();
+  const box = document.getElementById('thumb-preview-box');
+  if (val) {
+    box.classList.remove('empty');
+    box.innerHTML = `<img src="${val}" alt="" onerror="this.style.display='none'">`;
+  } else {
+    box.classList.add('empty');
+    box.innerHTML = '';
+  }
+}
+
+// 개별 사진 파일 피커 열기
+function pickPhoto(i) {
+  document.getElementById('photo-file-' + i).click();
+}
+
+// 개별 사진 파일 선택됨 → Base64 변환 후 저장
+function onPhotoFilePicked(input, i) {
+  if (!input.files[0]) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const base64 = e.target.result;
+    const pathInput = document.querySelector(`#photo-row-${i} .photo-src`);
+    if (pathInput) pathInput.value = base64;
+    const preview = document.getElementById('photo-preview-' + i);
+    if (preview) {
+      preview.classList.add('visible');
+      preview.innerHTML = `<img src="${base64}" alt="">`;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+// 사진 경로 직접 입력 시 미리보기
+function updatePhotoPreview(i) {
+  const val = document.querySelector(`#photo-row-${i} .photo-src`)?.value?.trim();
+  const preview = document.getElementById('photo-preview-' + i);
+  if (!preview) return;
+  if (val) {
+    preview.classList.add('visible');
+    preview.innerHTML = `<img src="${val}" alt="" onerror="this.style.display='none'">`;
+  } else {
+    preview.classList.remove('visible');
+    preview.innerHTML = '';
+  }
+}
+
+// 여러 장 한 번에 선택 → Base64 변환 후 저장
+function onMultiPhotoPicked(input) {
+  if (!input.files.length) return;
+  const list = document.getElementById('photo-list');
+
+  Array.from(input.files).forEach(file => {
+    const i = list.children.length;
+    const div = document.createElement('div');
+    div.innerHTML = photoRowHTML('', i);
+    list.appendChild(div.firstElementChild);
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const base64 = e.target.result;
+      const pathInput = document.querySelector(`#photo-row-${i} .photo-src`);
+      if (pathInput) pathInput.value = base64;
+      const preview = document.getElementById('photo-preview-' + i);
+      if (preview) {
+        preview.classList.add('visible');
+        preview.innerHTML = `<img src="${base64}" alt="">`;
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+
+  input.value = '';
+}
+
+/* ── Google Drive URL 변환 ── */
+function extractGdriveId(url) {
+  // https://drive.google.com/file/d/FILE_ID/view
+  // https://drive.google.com/open?id=FILE_ID
+  // https://drive.google.com/uc?id=FILE_ID
+  const patterns = [
+    /\/file\/d\/([a-zA-Z0-9_-]{10,})/,
+    /[?&]id=([a-zA-Z0-9_-]{10,})/,
+    /\/d\/([a-zA-Z0-9_-]{10,})/,
+  ];
+  for (const pat of patterns) {
+    const m = url.match(pat);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function gdriveConvert(inputId, previewBoxId) {
+  const input = document.getElementById(inputId);
+  const raw = input.value.trim();
+  const id = extractGdriveId(raw);
+  if (!id) {
+    alert('Google Drive 공유 링크를 먼저 입력/붙여넣기 하세요.\n예: https://drive.google.com/file/d/.../view');
+    return;
+  }
+  const direct = `https://lh3.googleusercontent.com/d/${id}`;
+  input.value = direct;
+  // 미리보기 업데이트
+  const box = document.getElementById(previewBoxId);
+  if (box) {
+    box.classList.remove('empty');
+    box.innerHTML = `<img src="${direct}" alt="" onerror="this.parentElement.innerHTML='<span style=color:#ef4444;font-size:12px>이미지 로드 실패 — Drive 파일이 공개 설정인지 확인하세요</span>'">`;
+  }
+}
+
+function gdriveConvertPhoto(i) {
+  const input = document.querySelector(`#photo-row-${i} .photo-src`);
+  if (!input) return;
+  const raw = input.value.trim();
+  const id = extractGdriveId(raw);
+  if (!id) {
+    alert('Google Drive 공유 링크를 먼저 입력/붙여넣기 하세요.');
+    return;
+  }
+  const direct = `https://lh3.googleusercontent.com/d/${id}`;
+  input.value = direct;
+  const preview = document.getElementById('photo-preview-' + i);
+  if (preview) {
+    preview.classList.add('visible');
+    preview.innerHTML = `<img src="${direct}" alt="" onerror="this.parentElement.innerHTML='<span style=color:#ef4444;font-size:12px>로드 실패 — 공개 설정 확인</span>'">`;
+  }
+}
+
+function closePanel() {
+  editingId = null;
+  document.getElementById('edit-panel').classList.remove('open');
+  renderProjectList();
+}
+
+function getVal(id, fallback = '') {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : fallback;
+}
+
+function saveCurrentProject() {
+  try {
+    if (!editingId) { showToast('❌ 먼저 프로젝트를 선택하세요'); return; }
+    const idx = DATA.projects.findIndex(x => x.id === editingId);
+    if (idx === -1) { showToast('❌ 프로젝트를 찾을 수 없습니다'); return; }
+
+    const photos = Array.from(
+      document.querySelectorAll('#panel-body .photo-src')
+    ).map(el => el.value.trim()).filter(Boolean);
+
+    DATA.projects[idx] = {
+      ...DATA.projects[idx],
+      title:       getVal('p-title') || DATA.projects[idx].title,
+      category:    getVal('p-category') || DATA.projects[idx].category,
+      year:        parseInt(getVal('p-year')) || DATA.projects[idx].year,
+      visible:     document.getElementById('p-visible')?.checked !== false,
+      thumbnail:   getVal('p-thumbnail'),
+      description: getVal('p-desc'),
+      link:        getVal('p-link'),
+      photos,
+      position: {
+        x: parseInt(getVal('p-x')) || DATA.projects[idx].position?.x || 400,
+        y: parseInt(getVal('p-y')) || DATA.projects[idx].position?.y || 300,
+      }
+    };
+
+    persistData();
+
+    const titleEl = document.getElementById('panel-title');
+    if (titleEl) titleEl.textContent = DATA.projects[idx].title;
+    renderProjectList();
+    showToast('✅ 저장되었습니다');
+
+    // 버튼 시각 피드백
+    const btn = document.querySelector('.panel-footer .btn-primary');
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = '✓ 저장됨';
+      btn.style.background = '#166534';
+      setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 1500);
+    }
+  } catch (err) {
+    showToast('❌ 오류: ' + err.message);
+    console.error('saveCurrentProject error:', err);
+  }
+}
+
+function deleteCurrentProject() {
+  if (!editingId) return;
+  if (!confirm('이 프로젝트를 삭제할까요?')) return;
+  DATA.projects = DATA.projects.filter(x => x.id !== editingId);
+  persistData();
+  closePanel();
+}
+
+function newProject() {
+  const id = 'project-' + Date.now();
+  DATA.projects.push({
+    id, title: '새 프로젝트', category: DATA.categories[0] || '',
+    thumbnail: '', description: '', photos: [], year: new Date().getFullYear(),
+    position: { x: 400 + Math.random()*200, y: 300 + Math.random()*100 }
+  });
+  renderProjectList();
+  openEditPanel(id);
+}
+
+/* ═══════════════════════════════════════════
+   기본 정보 폼
+   ═══════════════════════════════════════════ */
+function renderOwnerForm() {
+  const o = DATA.owner;
+  document.getElementById('owner-name').value      = o.name || '';
+  document.getElementById('owner-bio').value       = o.bio || '';
+  document.getElementById('owner-email').value     = o.contact?.email || '';
+  document.getElementById('owner-instagram').value = o.contact?.instagram || '';
+  document.getElementById('owner-behance').value   = o.contact?.behance || '';
+}
+
+function syncOwner() {
+  DATA.owner.name = document.getElementById('owner-name').value;
+  DATA.owner.bio  = document.getElementById('owner-bio').value;
+  DATA.owner.contact = {
+    email:     document.getElementById('owner-email').value,
+    instagram: document.getElementById('owner-instagram').value,
+    behance:   document.getElementById('owner-behance').value,
+  };
+  persistData();
+}
+
+/* ═══════════════════════════════════════════
+   카테고리 관리
+   ═══════════════════════════════════════════ */
+function renderCategories() {
+  const list = document.getElementById('cat-list');
+  list.innerHTML = DATA.categories.map(c => `
+    <div class="cat-chip">
+      ${c}
+      <button class="del" onclick="removeCategory('${c}')">×</button>
+    </div>`).join('');
+}
+
+function addCategory() {
+  const input = document.getElementById('new-cat-input');
+  const val = input.value.trim();
+  if (!val || DATA.categories.includes(val)) return;
+  DATA.categories.push(val);
+  input.value = '';
+  persistData();
+  renderCategories();
+}
+
+function removeCategory(cat) {
+  if (!confirm(`"${cat}" 카테고리를 삭제할까요? 해당 카테고리의 프로젝트는 카테고리가 비워집니다.`)) return;
+  DATA.categories = DATA.categories.filter(c => c !== cat);
+  DATA.projects.forEach(p => { if (p.category === cat) p.category = ''; });
+  persistData();
+  renderCategories();
+}
+
+/* ═══════════════════════════════════════════
+   명시적 저장
+   ═══════════════════════════════════════════ */
+function saveToLocal() {
+  persistData();
+  showToast('✅ 저장되었습니다');
+}
+
+/* ═══════════════════════════════════════════
+   JSON 다운로드
+   ═══════════════════════════════════════════ */
+function downloadJSON() {
+  // 패널이 열려있으면 먼저 저장
+  if (editingId) saveCurrentProject();
+
+  const json = JSON.stringify(DATA, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'content.json';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('⬇ content.json 다운로드 완료');
+}
+
+/* ═══════════════════════════════════════════
+   유틸
+   ═══════════════════════════════════════════ */
+function esc(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e3a5f;color:#93c5fd;border:1px solid #2563eb;border-radius:8px;padding:8px 18px;font-size:13px;z-index:999;transition:opacity 0.2s;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg; t.style.opacity = '1';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.style.opacity = '0'; }, 2000);
+}
+</script>
+</body>
+</html>

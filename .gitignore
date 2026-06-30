@@ -1,0 +1,20 @@
+# 개발 잔재 (사용 안 함)
+src/
+node_modules/
+package.json
+package-lock.json
+postcss.config.js
+tailwind.config.js
+vite.config.js
+portfolio-dev-brief.md
+dist/
+
+# 이미지 (Google Drive로 관리)
+images/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 로컬 전용 (어드민 데이터는 git에 포함)
+# data/content.json 은 포함
