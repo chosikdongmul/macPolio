@@ -608,8 +608,9 @@
     <div class="settings-item" onclick="resetIconPositions(); closeSettings();">
       <span class="si-icon">↺</span> 폴더 위치 초기화
     </div>
-    <div class="settings-item" onclick="cycleWallpaper(); closeSettings();">
-      <span class="si-icon">🖼</span> 배경화면 변경
+    <div style="padding:6px 14px 8px;">
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:6px;">배경화면</div>
+      <div id="settings-wp-swatches" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
     </div>
     <div class="settings-sep"></div>
     <div class="settings-label">창</div>
@@ -657,13 +658,6 @@
       <div class="dock-icon-img" style="background:linear-gradient(135deg,#11998e,#38ef7d);">✉️</div>
     </div>
     <div class="dock-sep"></div>
-    <!-- 배경화면 버튼 (호버 시 색상 팔레트 표시) -->
-    <div class="dock-icon-wrap" id="dock-wallpaper-btn"
-         onmouseenter="showWallpaperPicker()" onmouseleave="scheduleHideWallpaperPicker()">
-      <div class="dock-label">배경화면</div>
-      <div class="dock-icon-img" style="background:linear-gradient(135deg,#232526,#414345);font-size:26px;">🌄</div>
-    </div>
-    <div class="dock-sep"></div>
     <div class="dock-icon-wrap" id="dock-settings-btn" onclick="toggleSettings(event)">
       <div class="dock-label">설정</div>
       <div class="dock-icon-img" style="background:linear-gradient(135deg,#3a3a3a,#555);font-size:26px;">⚙️</div>
@@ -674,11 +668,6 @@
 
 </div>
 
-<!-- 배경화면 색상 팔레트 -->
-<div id="wallpaper-picker"
-     onmouseenter="cancelHideWallpaperPicker()" onmouseleave="scheduleHideWallpaperPicker()">
-  <div id="wallpaper-picker-inner"></div>
-</div>
 
 <!-- 우클릭 컨텍스트 메뉴 -->
 <div id="ctx-menu">
@@ -951,7 +940,11 @@ const WP_KEY = 'portfolio_wallpaper';
 function applyWallpaper(idx) {
   wallpaperIdx = idx;
   document.getElementById('desktop').style.background = WALLPAPERS[idx].bg;
-  document.querySelectorAll('.wp-swatch').forEach((s, i) => s.classList.toggle('active', i === idx));
+  document.querySelectorAll('.wp-swatch').forEach((s, i) => {
+    s.classList.toggle('active', i === idx);
+    s.style.borderColor = i === idx ? 'white' : 'transparent';
+    s.style.transform   = i === idx ? 'scale(1.2)' : '';
+  });
   localStorage.setItem(WP_KEY, idx);
 }
 
@@ -985,45 +978,20 @@ function cycleWallpaper() {
   applyWallpaper((wallpaperIdx + 1) % WALLPAPERS.length);
 }
 
-/* 배경화면 팔레트 */
-let _wpHideTimer = null;
-
+/* 배경화면 팔레트 — 설정 메뉴 안에 렌더 */
 function initWallpaperPicker() {
-  const inner = document.getElementById('wallpaper-picker-inner');
+  const container = document.getElementById('settings-wp-swatches');
+  if (!container) return;
   WALLPAPERS.forEach((w, i) => {
     const s = document.createElement('div');
-    s.className = 'wp-swatch' + (i === 0 ? ' active' : '');
-    s.style.background = w.swatch;
+    s.className = 'wp-swatch' + (i === wallpaperIdx ? ' active' : '');
+    s.style.cssText = `width:28px;height:28px;border-radius:50%;cursor:pointer;
+      background:${w.swatch};border:2px solid transparent;transition:transform 0.1s,border-color 0.1s;
+      flex-shrink:0;`;
     s.title = w.name;
-    s.innerHTML = `<div class="wp-swatch-label">${w.name}</div>`;
     s.addEventListener('click', () => { applyWallpaper(i); });
-    inner.appendChild(s);
+    container.appendChild(s);
   });
-}
-
-function showWallpaperPicker() {
-  cancelHideWallpaperPicker();
-  const picker = document.getElementById('wallpaper-picker');
-  const btn    = document.getElementById('dock-wallpaper-btn');
-  picker.classList.add('open');
-  requestAnimationFrame(() => {
-    const r  = btn.getBoundingClientRect();
-    const pW = picker.offsetWidth;
-    const left = Math.min(r.left + r.width / 2 - pW / 2, window.innerWidth - pW - 8);
-    picker.style.left   = Math.max(8, left) + 'px';
-    picker.style.bottom = (window.innerHeight - r.top + 8) + 'px';
-    picker.style.top    = 'auto';
-  });
-}
-
-function scheduleHideWallpaperPicker() {
-  _wpHideTimer = setTimeout(() => {
-    document.getElementById('wallpaper-picker').classList.remove('open');
-  }, 200);
-}
-
-function cancelHideWallpaperPicker() {
-  clearTimeout(_wpHideTimer);
 }
 
 /* 모든 창 닫기 */
