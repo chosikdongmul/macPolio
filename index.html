@@ -994,6 +994,7 @@ let _wpSubTimer = null;
 function initWallpaperPicker() {
   const container = document.getElementById('settings-wp-swatches');
   if (!container) return;
+  container.innerHTML = ''; // 중복 방지
   WALLPAPERS.forEach((w, i) => {
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;padding:3px 4px;border-radius:6px;transition:background 0.1s;';
