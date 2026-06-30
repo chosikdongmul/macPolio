@@ -333,6 +333,28 @@
     </div>
   </div>
 
+  <!-- JSON 복사 팝업 -->
+  <div id="json-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;
+       display:none;align-items:center;justify-content:center;">
+    <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;width:680px;max-width:90vw;
+                max-height:80vh;display:flex;flex-direction:column;padding:24px;gap:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:15px;font-weight:700;color:#fff;">📋 content.json</div>
+        <button onclick="closeJSONPopup()" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer;">✕</button>
+      </div>
+      <div style="font-size:12px;color:#6b7280;">아래 전체를 복사해서 <code style="color:#4da3e8;">data/content.json</code> 파일에 붙여넣으세요.</div>
+      <textarea id="json-output" readonly
+        style="flex:1;min-height:360px;background:#0d0d0d;border:1px solid #333;border-radius:8px;
+               color:#a8e6a3;font-family:monospace;font-size:12px;padding:12px;
+               resize:none;outline:none;line-height:1.5;"></textarea>
+      <button onclick="copyJSON()" id="json-copy-btn"
+        style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:10px;
+               font-size:14px;font-weight:600;cursor:pointer;">
+        클립보드에 복사
+      </button>
+    </div>
+  </div>
+
   <!-- 하단 저장 바 -->
   <div id="save-bar">
     <div class="save-hint">자동저장(안전장치) 켜짐 · 명시적으로 저장하려면 <span>저장</span> 버튼 사용</div>
@@ -340,8 +362,8 @@
       <button class="btn btn-secondary" onclick="saveToLocal()" style="font-size:13px;padding:9px 20px;border-color:#444;">
         💾 저장
       </button>
-      <button class="btn btn-success" onclick="downloadJSON()" style="font-size:13px;padding:9px 20px;">
-        ⬇ JSON 다운로드
+      <button class="btn btn-success" onclick="showJSONPopup()" style="font-size:13px;padding:9px 20px;">
+        📋 JSON 복사
       </button>
     </div>
   </div>
@@ -821,6 +843,37 @@ function renderOwnerForm() {
   document.getElementById('owner-instagram').value = o.contact?.instagram || '';
   document.getElementById('owner-behance').value   = o.contact?.behance || '';
 }
+
+function showJSONPopup() {
+  const json = JSON.stringify(DATA, null, 2);
+  document.getElementById('json-output').value = json;
+  const modal = document.getElementById('json-modal');
+  modal.style.display = 'flex';
+}
+
+function closeJSONPopup() {
+  document.getElementById('json-modal').style.display = 'none';
+}
+
+function copyJSON() {
+  const ta = document.getElementById('json-output');
+  ta.select();
+  navigator.clipboard.writeText(ta.value).then(() => {
+    const btn = document.getElementById('json-copy-btn');
+    btn.textContent = '✓ 복사됨!';
+    btn.style.background = '#166534';
+    setTimeout(() => {
+      btn.textContent = '클립보드에 복사';
+      btn.style.background = '#2563eb';
+    }, 2000);
+  });
+}
+
+// 모달 바깥 클릭 시 닫기
+document.addEventListener('click', e => {
+  const modal = document.getElementById('json-modal');
+  if (modal && e.target === modal) closeJSONPopup();
+});
 
 function syncOwner() {
   DATA.owner.name = document.getElementById('owner-name').value;
