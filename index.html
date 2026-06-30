@@ -1380,9 +1380,15 @@ function deselectAll() {
 
 /* 아이콘 드래그 (바탕화면 자유 배치) */
 function makeDraggable(el, project) {
+  // 이미지 기본 드래그 비활성화
+  el.querySelectorAll('img').forEach(img => img.setAttribute('draggable', 'false'));
+  // 동적으로 추가되는 img도 처리
+  el.addEventListener('dragstart', e => e.preventDefault());
+
   let startX, startY, startLeft, startTop, dragging = false;
   el.addEventListener('mousedown', e => {
     if (e.button !== 0) return;
+    e.preventDefault(); // 브라우저 기본 드래그 차단
     startX = e.clientX; startY = e.clientY;
     startLeft = project.position.x;
     startTop = project.position.y;
