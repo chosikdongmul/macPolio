@@ -403,6 +403,9 @@
       <button class="btn btn-success" onclick="showJSONPopup()" style="font-size:13px;padding:9px 20px;">
         📋 JSON 복사
       </button>
+      <button class="btn btn-secondary" onclick="resetToDefaults()" style="font-size:13px;padding:9px 20px;border-color:#7c2d2d;color:#f87171;" title="브라우저에 저장된 편집 내용을 지우고 최신 기본 데이터(사진 폴더 스캔 결과)를 다시 불러옵니다">
+        ♻️ 최신 데이터로 초기화
+      </button>
     </div>
   </div>
 </div>
@@ -421,23 +424,86 @@ const SESSION_KEY = 'portfolio_admin_ok';
 const DATA_KEY = 'portfolio_data';
 
 // 기본 데이터 (localStorage에 없을 때만 사용)
+// snap/cosplay/profile 폴더 스캔 결과가 반영된 최신 데이터 — data/content.json과 동일
 const DEFAULT_DATA = {
-  owner: {
-    name: "홍길동",
-    bio: "사진작가 / 비주얼 디렉터",
-    contact: { email: "hello@example.com", instagram: "https://instagram.com/username", behance: "https://behance.net/username" }
+  "owner": {
+    "name": "홍길동",
+    "bio": "사진작가 / 비주얼 디렉터",
+    "contact": {
+      "email": "hello@example.com",
+      "instagram": "https://instagram.com/username",
+      "behance": "https://behance.net/username"
+    }
   },
-  projects: [
-    { id:"project-01", title:"Dodo Pizza",   category:"브랜딩",    thumbnail:"", description:"도도 피자의 새로운 브랜드 아이덴티티를 담은 비주얼 캠페인.", photos:[], year:2024, position:{x:540,y:160} },
-    { id:"project-02", title:"Visamie",       category:"광고",      thumbnail:"", description:"글로벌 비자 서비스 플랫폼 Visamie의 광고 캠페인.",         photos:[], year:2024, position:{x:240,y:220} },
-    { id:"project-03", title:"Logofolio",     category:"브랜딩",    thumbnail:"", description:"다양한 클라이언트를 위해 제작한 로고 컬렉션.",              photos:[], year:2023, position:{x:880,y:190} },
-    { id:"project-04", title:"DALA CAMP",     category:"포트레이트",thumbnail:"", description:"야외 캠핑 브랜드 DALA CAMP의 라이프스타일 포트레이트.",    photos:[], year:2023, position:{x:200,y:510} },
-    { id:"project-05", title:"Megacampus",    category:"공간",      thumbnail:"", description:"교육 플랫폼 메가캠퍼스의 공간 촬영 프로젝트.",              photos:[], year:2024, position:{x:540,y:500} },
-    { id:"project-06", title:"Geely × Major", category:"광고",      thumbnail:"", description:"지리 자동차와 메이저 콜라보레이션 광고 캠페인.",            photos:[], year:2024, position:{x:880,y:470} },
-    { id:"project-07", title:"Skin.Club",     category:"브랜딩",    thumbnail:"", description:"게이밍 스킨 플랫폼 Skin.Club의 비주얼 아이덴티티.",        photos:[], year:2024, position:{x:1160,y:310} },
-    { id:"project-08", title:"DFC",           category:"광고",      thumbnail:"", description:"DFC 브랜드 광고 캠페인.",                                  photos:[], year:2023, position:{x:380,y:380} }
+  "projects": [
+    { "id":"project-01", "title":"Dodo Pizza",   "category":"브랜딩",    "thumbnail":"https://lh3.googleusercontent.com/d/1Zt0964jUYqmQfux72cqFTNKVVj5EzHXB", "description":"도도 피자의 새로운 브랜드 아이덴티티를 담은 비주얼 캠페인.", "photos":["https://lh3.googleusercontent.com/d/1Zt0964jUYqmQfux72cqFTNKVVj5EzHXB"], "year":2024, "position":{"x":540,"y":160}, "visible":true, "link":"" },
+    { "id":"project-02", "title":"Visamie",       "category":"광고",      "thumbnail":"", "description":"글로벌 비자 서비스 플랫폼 Visamie의 광고 캠페인.",         "photos":[], "year":2024, "position":{"x":240,"y":220} },
+    { "id":"project-03", "title":"Logofolio",     "category":"브랜딩",    "thumbnail":"", "description":"다양한 클라이언트를 위해 제작한 로고 컬렉션.",              "photos":[], "year":2023, "position":{"x":880,"y":190} },
+    { "id":"project-04", "title":"DALA CAMP",     "category":"포트레이트","thumbnail":"", "description":"야외 캠핑 브랜드 DALA CAMP의 라이프스타일 포트레이트.",    "photos":[], "year":2023, "position":{"x":200,"y":510} },
+    { "id":"project-05", "title":"Megacampus",    "category":"공간",      "thumbnail":"", "description":"교육 플랫폼 메가캠퍼스의 공간 촬영 프로젝트.",              "photos":[], "year":2024, "position":{"x":540,"y":500} },
+    { "id":"project-06", "title":"Geely × Major", "category":"광고",      "thumbnail":"", "description":"지리 자동차와 메이저 콜라보레이션 광고 캠페인.",            "photos":[], "year":2024, "position":{"x":880,"y":470} },
+    { "id":"project-07", "title":"Skin.Club",     "category":"브랜딩",    "thumbnail":"", "description":"게이밍 스킨 플랫폼 Skin.Club의 비주얼 아이덴티티.",        "photos":[], "year":2024, "position":{"x":1160,"y":310} },
+    { "id":"project-08", "title":"DFC",           "category":"광고",      "thumbnail":"", "description":"DFC 브랜드 광고 캠페인.",                                  "photos":[], "year":2023, "position":{"x":380,"y":380} },
+    { "id":"snap-01", "title":"25'패션위크", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/25'패션위크/KJH_6196.webp","images/snap/25'패션위크/KJH_6531.webp","images/snap/25'패션위크/KJH_6570.webp","images/snap/25'패션위크/KJH_6633.webp","images/snap/25'패션위크/KJH_6756.webp","images/snap/25'패션위크/KJH_6982.webp"], "year":2025, "position":{"x":80,"y":620}, "visible":true, "link":"" },
+    { "id":"snap-02", "title":"경복궁", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/경복궁/KJH_0311.webp","images/snap/경복궁/KJH_0884.webp","images/snap/경복궁/KJH_0928.webp","images/snap/경복궁/KJH_1003.webp"], "year":null, "position":{"x":220,"y":620}, "visible":true, "link":"" },
+    { "id":"snap-03", "title":"경복궁2", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/경복궁2/KJH_6132.webp","images/snap/경복궁2/KJH_6707.webp","images/snap/경복궁2/KJH_6887-향상됨-노이즈 감소.webp","images/snap/경복궁2/KJH_7080-향상됨-노이즈 감소.webp"], "year":null, "position":{"x":360,"y":620}, "visible":true, "link":"" },
+    { "id":"snap-04", "title":"낙성대공원", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/낙성대공원/_KJH4710.webp","images/snap/낙성대공원/_KJH4763.webp","images/snap/낙성대공원/_KJH4777.webp","images/snap/낙성대공원/_KJH4791.webp","images/snap/낙성대공원/_KJH4834.webp","images/snap/낙성대공원/_KJH4850.webp"], "year":null, "position":{"x":500,"y":620}, "visible":true, "link":"" },
+    { "id":"snap-05", "title":"서울", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/서울/_KJH7633.webp","images/snap/서울/_KJH7642.webp","images/snap/서울/_KJH7715.webp","images/snap/서울/_KJH7812.webp"], "year":null, "position":{"x":640,"y":620}, "visible":true, "link":"" },
+    { "id":"snap-06", "title":"서울 식물원", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/서울 식물원/_k1.webp","images/snap/서울 식물원/_KJH5722.webp","images/snap/서울 식물원/_KJH5852.webp","images/snap/서울 식물원/_KJH5922.webp","images/snap/서울 식물원/_KJH5944.webp"], "year":null, "position":{"x":780,"y":620}, "visible":true, "link":"" },
+    { "id":"snap-07", "title":"성수1", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/성수1/1.webp","images/snap/성수1/KJH_8699-향상됨-노이즈 감소.webp","images/snap/성수1/KJH_8987 복사.webp","images/snap/성수1/KJH_9158-향상됨-노이즈 감소22.webp","images/snap/성수1/KJH_9287-향상됨-노이즈 감소.webp","images/snap/성수1/KJH_9342.webp","images/snap/성수1/KJH_9522-향상됨-노이즈 감소.webp","images/snap/성수1/KJH_9751.webp"], "year":null, "position":{"x":920,"y":620}, "visible":true, "link":"" },
+    { "id":"snap-08", "title":"양재 가을", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/양재 가을/_KJH5722.webp","images/snap/양재 가을/_KJH5758.webp","images/snap/양재 가을/_KJH5769.webp","images/snap/양재 가을/_KJH5786.webp","images/snap/양재 가을/_KJH5789.webp","images/snap/양재 가을/_KJH5800.webp","images/snap/양재 가을/_KJH5811.webp"], "year":null, "position":{"x":1060,"y":620}, "visible":true, "link":"" },
+    { "id":"snap-09", "title":"양재 가을2", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/양재 가을2/_KJH6295.webp","images/snap/양재 가을2/_KJH6304.webp","images/snap/양재 가을2/_KJH6345.webp","images/snap/양재 가을2/_KJH6389.webp","images/snap/양재 가을2/_KJH6410.webp","images/snap/양재 가을2/_KJH6476.webp"], "year":null, "position":{"x":80,"y":750}, "visible":true, "link":"" },
+    { "id":"snap-10", "title":"양재 벚꽃1", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/양재 벚꽃1/_KJH4104.webp","images/snap/양재 벚꽃1/_KJH4140.webp"], "year":null, "position":{"x":220,"y":750}, "visible":true, "link":"" },
+    { "id":"snap-11", "title":"양재 벚꽃2", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/양재 벚꽃2/_KJH8013.webp","images/snap/양재 벚꽃2/_KJH8029.webp","images/snap/양재 벚꽃2/_KJH8090.webp","images/snap/양재 벚꽃2/_KJH8149.webp","images/snap/양재 벚꽃2/_KJH8169.webp","images/snap/양재 벚꽃2/_KJH8201.webp"], "year":null, "position":{"x":360,"y":750}, "visible":true, "link":"" },
+    { "id":"snap-12", "title":"용산 공원", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/용산 공원/1.webp","images/snap/용산 공원/KJH_8869.webp","images/snap/용산 공원/KJH_9074.webp","images/snap/용산 공원/KJH_9142.webp","images/snap/용산 공원/KJH_9270.webp"], "year":null, "position":{"x":500,"y":750}, "visible":true, "link":"" },
+    { "id":"snap-13", "title":"월간 포카리", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/월간 포카리/1.webp","images/snap/월간 포카리/_KJH8579.webp","images/snap/월간 포카리/_KJH8627.webp","images/snap/월간 포카리/_KJH8681.webp","images/snap/월간 포카리/_KJH8704.webp","images/snap/월간 포카리/_KJH8728.webp","images/snap/월간 포카리/_KJH8739.webp"], "year":null, "position":{"x":640,"y":750}, "visible":true, "link":"" },
+    { "id":"snap-14", "title":"이태원", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/이태원/_KJH7338 복사.webp","images/snap/이태원/_KJH7339.webp","images/snap/이태원/_KJH7341.webp","images/snap/이태원/_KJH7522.webp","images/snap/이태원/_KJH7583.webp","images/snap/이태원/_KJH7604.webp"], "year":null, "position":{"x":780,"y":750}, "visible":true, "link":"" },
+    { "id":"snap-15", "title":"정독도서관", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/정독도서관/_KJH0148.webp","images/snap/정독도서관/_KJH0155.webp","images/snap/정독도서관/_KJH0195.webp"], "year":null, "position":{"x":920,"y":750}, "visible":true, "link":"" },
+    { "id":"snap-16", "title":"종로1", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/종로1/_KJH5700.webp","images/snap/종로1/_KJH5709.webp","images/snap/종로1/_KJH5829.webp","images/snap/종로1/_KJH5854 (2).webp","images/snap/종로1/_KJH5951.webp","images/snap/종로1/_KJH6001.webp","images/snap/종로1/_KJH6047.webp"], "year":null, "position":{"x":1060,"y":750}, "visible":true, "link":"" },
+    { "id":"snap-17", "title":"하늘공원1", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/하늘공원1/1.webp","images/snap/하늘공원1/셀렉2.webp","images/snap/하늘공원1/셀렉3.webp","images/snap/하늘공원1/셀렉4.webp","images/snap/하늘공원1/셀렉7.webp","images/snap/하늘공원1/셀렉8.webp"], "year":null, "position":{"x":80,"y":880}, "visible":true, "link":"" },
+    { "id":"snap-18", "title":"하늘공원2", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/하늘공원2/_KJH8977.webp","images/snap/하늘공원2/PSX_20250623_093338.webp","images/snap/하늘공원2/PSX_20250623_094010.webp","images/snap/하늘공원2/굿.webp"], "year":null, "position":{"x":220,"y":880}, "visible":true, "link":"" },
+    { "id":"snap-19", "title":"하늘공원3", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/하늘공원3/_KJH3507.webp","images/snap/하늘공원3/_KJH3545.webp","images/snap/하늘공원3/_KJH3856.webp","images/snap/하늘공원3/_KJH3916.webp"], "year":null, "position":{"x":360,"y":880}, "visible":true, "link":"" },
+    { "id":"snap-20", "title":"하늘공원4", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/하늘공원4/_KJH4217.webp","images/snap/하늘공원4/_KJH4360.webp","images/snap/하늘공원4/_KJH4478.webp","images/snap/하늘공원4/_KJH4486.webp","images/snap/하늘공원4/_KJH4571.webp","images/snap/하늘공원4/_KJH4645.webp","images/snap/하늘공원4/_KJH4696.webp"], "year":null, "position":{"x":500,"y":880}, "visible":true, "link":"" },
+    { "id":"snap-21", "title":"해방촌", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/해방촌/_KJH1133.webp","images/snap/해방촌/_KJH1141.webp","images/snap/해방촌/_KJH1165.webp","images/snap/해방촌/_KJH1180.webp"], "year":null, "position":{"x":640,"y":880}, "visible":true, "link":"" },
+    { "id":"snap-22", "title":"홍대", "category":"스냅", "thumbnail":"", "description":"", "photos":["images/snap/홍대/KJH_3942.webp","images/snap/홍대/KJH_3980.webp","images/snap/홍대/KJH_4039.webp","images/snap/홍대/KJH_4237.webp"], "year":null, "position":{"x":780,"y":880}, "visible":true, "link":"" },
+    { "id":"cosplay-01", "title":"25.07 서울 코믹월드", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/25.07 서울 코믹월드/KakaoTalk_20250723_104229556_01.webp","images/cosplay/25.07 서울 코믹월드/KakaoTalk_20250723_104229556_03.webp","images/cosplay/25.07 서울 코믹월드/P20250719_170122330_38D5B5FD-77B1-4813-896C-6AE9EBAD5F77.webp","images/cosplay/25.07 서울 코믹월드/P20250719_170212750_19285207-ED66-4822-BA18-71F7F8EAF2CD.webp","images/cosplay/25.07 서울 코믹월드/P20250719_171521880_35E9E994-E372-4267-99AB-90BA117E9A50.webp"], "year":2025, "position":{"x":920,"y":880}, "visible":true, "link":"" },
+    { "id":"cosplay-02", "title":"25.10 서울 코믹월드", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/25.10 서울 코믹월드/_KJH4967.webp","images/cosplay/25.10 서울 코믹월드/_KJH5114.webp","images/cosplay/25.10 서울 코믹월드/소울3.webp","images/cosplay/25.10 서울 코믹월드/오들님_소울마카01.webp","images/cosplay/25.10 서울 코믹월드/오들님_소울마카06.webp"], "year":2025, "position":{"x":1060,"y":880}, "visible":true, "link":"" },
+    { "id":"cosplay-03", "title":"25.12 AGF", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/25.12 AGF/_KJH8142 복사 2.webp","images/cosplay/25.12 AGF/_KJH8147 복사 2.webp","images/cosplay/25.12 AGF/_KJH8195 복사2.webp"], "year":2025, "position":{"x":80,"y":1010}, "visible":true, "link":"" },
+    { "id":"cosplay-04", "title":"26.05 서울 코믹월드", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/26.05 서울 코믹월드/IMG_2940 복사.webp","images/cosplay/26.05 서울 코믹월드/IMG_2947 복사.webp","images/cosplay/26.05 서울 코믹월드/IMG_2981 복사.webp","images/cosplay/26.05 서울 코믹월드/P20260515_161943884_1F053837-1CB9-4FC7-8501-82B687095358 복사.webp","images/cosplay/26.05 서울 코믹월드/P20260516_001053159_11E14BEC-4444-44F3-A793-822041FD19D9 복사.webp"], "year":2026, "position":{"x":220,"y":1010}, "visible":true, "link":"" },
+    { "id":"cosplay-05", "title":"26.05 플레이엑스포", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/26.05 플레이엑스포/KakaoTalk_20260527_011933071_02.webp","images/cosplay/26.05 플레이엑스포/KakaoTalk_20260527_011933071_03.webp","images/cosplay/26.05 플레이엑스포/KakaoTalk_20260527_011933071_04.webp"], "year":2026, "position":{"x":360,"y":1010}, "visible":true, "link":"" },
+    { "id":"cosplay-06", "title":"26.05 플레이엑스포(2)", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/26.05 플레이엑스포(2)/1.webp","images/cosplay/26.05 플레이엑스포(2)/20260525.webp","images/cosplay/26.05 플레이엑스포(2)/20260614_062656200.webp","images/cosplay/26.05 플레이엑스포(2)/20260614_063709014.webp"], "year":2026, "position":{"x":500,"y":1010}, "visible":true, "link":"" },
+    { "id":"cosplay-07", "title":"FGO 레오니다스", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/FGO 레오니다스/_KJH2611 복사.webp","images/cosplay/FGO 레오니다스/_KJH2631 복사.webp","images/cosplay/FGO 레오니다스/_KJH2641 복사.webp","images/cosplay/FGO 레오니다스/_KJH2653 복사.webp","images/cosplay/FGO 레오니다스/_KJH2664 복사 2.webp"], "year":null, "position":{"x":640,"y":1010}, "visible":true, "link":"" },
+    { "id":"cosplay-08", "title":"가을 프리렌", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/가을 프리렌/_KJH6032.webp","images/cosplay/가을 프리렌/MEITU_20251114_005528295.webp","images/cosplay/가을 프리렌/MEITU_20251114_131744610.webp","images/cosplay/가을 프리렌/MEITU_20251115_233850122.webp"], "year":null, "position":{"x":780,"y":1010}, "visible":true, "link":"" },
+    { "id":"cosplay-09", "title":"가치아쿠타 잔카", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/가치아쿠타 잔카/KakaoTalk_20260323_091708335_01.webp","images/cosplay/가치아쿠타 잔카/KakaoTalk_20260323_091708335_02.webp","images/cosplay/가치아쿠타 잔카/KakaoTalk_20260323_091708335_04.webp","images/cosplay/가치아쿠타 잔카/KakaoTalk_20260323_091708335_05.webp","images/cosplay/가치아쿠타 잔카/KakaoTalk_20260323_091708335_06.webp"], "year":null, "position":{"x":920,"y":1010}, "visible":true, "link":"" },
+    { "id":"cosplay-10", "title":"강릉 미쿠", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/강릉 미쿠/_KJH3234.webp","images/cosplay/강릉 미쿠/KakaoTalk_20260215_004706405.webp","images/cosplay/강릉 미쿠/KakaoTalk_20260215_004706405_01.webp","images/cosplay/강릉 미쿠/KakaoTalk_20260309_225657301.webp"], "year":null, "position":{"x":1060,"y":1010}, "visible":true, "link":"" },
+    { "id":"cosplay-11", "title":"던전밥", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/던전밥/_KJH1703.webp","images/cosplay/던전밥/_KJH1814.webp","images/cosplay/던전밥/_KJH2050.webp","images/cosplay/던전밥/_KJH2062.webp"], "year":null, "position":{"x":80,"y":1140}, "visible":true, "link":"" },
+    { "id":"cosplay-12", "title":"데스노트", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/데스노트/2305.webp","images/cosplay/데스노트/2326.webp"], "year":null, "position":{"x":220,"y":1140}, "visible":true, "link":"" },
+    { "id":"cosplay-13", "title":"루나스 스튜디오1", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/루나스 스튜디오1/1.webp","images/cosplay/루나스 스튜디오1/3.webp","images/cosplay/루나스 스튜디오1/20250217_081313_848.webp","images/cosplay/루나스 스튜디오1/20250218_223003_915.webp"], "year":null, "position":{"x":360,"y":1140}, "visible":true, "link":"" },
+    { "id":"cosplay-14", "title":"룰루", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/룰루/4.webp","images/cosplay/룰루/룰루 (2).webp","images/cosplay/룰루/룰루 (3).webp","images/cosplay/룰루/룰루 (6).webp","images/cosplay/룰루/룰루 (10).webp","images/cosplay/룰루/룰루 (11).webp"], "year":null, "position":{"x":500,"y":1140}, "visible":true, "link":"" },
+    { "id":"cosplay-15", "title":"바람의 검심", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/바람의 검심/_KJH2936.webp","images/cosplay/바람의 검심/_KJH2939.webp","images/cosplay/바람의 검심/_KJH2954.webp","images/cosplay/바람의 검심/_KJH3008.webp","images/cosplay/바람의 검심/_KJH3027.webp"], "year":null, "position":{"x":640,"y":1140}, "visible":true, "link":"" },
+    { "id":"cosplay-16", "title":"뱅드림!", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/뱅드림!/IMG_4545.webp","images/cosplay/뱅드림!/IMG_4546.webp","images/cosplay/뱅드림!/오들오들님_소요04.webp","images/cosplay/뱅드림!/오들오들님_아논소요01.webp","images/cosplay/뱅드림!/오들오들님_아논소요06.webp","images/cosplay/뱅드림!/오들오들님_아논소요07.webp","images/cosplay/뱅드림!/오들오들님_아논소요08.webp","images/cosplay/뱅드림!/오들오들님_아논소요09.webp","images/cosplay/뱅드림!/오들오들님_아논소요11.webp"], "year":null, "position":{"x":780,"y":1140}, "visible":true, "link":"" },
+    { "id":"cosplay-17", "title":"브라이어", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/브라이어/_KJH7034.webp","images/cosplay/브라이어/_KJH7050.webp","images/cosplay/브라이어/_KJH7065.webp","images/cosplay/브라이어/_KJH7091.webp"], "year":null, "position":{"x":920,"y":1140}, "visible":true, "link":"" },
+    { "id":"cosplay-18", "title":"블리치 요루이치", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/블리치 요루이치/IMG_2932.webp"], "year":null, "position":{"x":1060,"y":1140}, "visible":true, "link":"" },
+    { "id":"cosplay-19", "title":"블리치 유하바하", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/블리치 유하바하/_KJH3337.webp","images/cosplay/블리치 유하바하/_KJH3341.webp"], "year":null, "position":{"x":80,"y":1270}, "visible":true, "link":"" },
+    { "id":"cosplay-20", "title":"아리", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/아리/image1 복사.jpg","images/cosplay/아리/꼬리.webp"], "year":null, "position":{"x":220,"y":1270}, "visible":true, "link":"" },
+    { "id":"cosplay-21", "title":"오버워치 메이", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/오버워치 메이/오들오들님_메이01.webp","images/cosplay/오버워치 메이/오들오들님_메이02.webp","images/cosplay/오버워치 메이/오들오들님_메이03.webp"], "year":null, "position":{"x":360,"y":1270}, "visible":true, "link":"" },
+    { "id":"cosplay-22", "title":"유키미쿠", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/유키미쿠/IMG_0547.webp","images/cosplay/유키미쿠/MEITU_20260112_013735379.webp","images/cosplay/유키미쿠/MEITU_20260112_020918515.webp","images/cosplay/유키미쿠/MEITU_20260113_002901941.webp"], "year":null, "position":{"x":500,"y":1270}, "visible":true, "link":"" },
+    { "id":"cosplay-23", "title":"이누야샤", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/이누야샤/개인_02.webp","images/cosplay/이누야샤/개인_06.webp","images/cosplay/이누야샤/오들오들님_셋쇼카라03.webp","images/cosplay/이누야샤/오들오들님_카라01 복사복사.webp","images/cosplay/이누야샤/오들오들님_카라02 복사복사.webp","images/cosplay/이누야샤/오들오들님_카라03.webp","images/cosplay/이누야샤/오들오들님_카라07.webp","images/cosplay/이누야샤/오들오들님_카라08.webp","images/cosplay/이누야샤/오들오들님_카라09.webp","images/cosplay/이누야샤/오들오들님_카라10.webp"], "year":null, "position":{"x":640,"y":1270}, "visible":true, "link":"" },
+    { "id":"cosplay-24", "title":"주술회전 회옥옥절", "category":"코스프레", "thumbnail":"", "description":"", "photos":["images/cosplay/주술회전 회옥옥절/6.webp","images/cosplay/주술회전 회옥옥절/11.webp","images/cosplay/주술회전 회옥옥절/IMG_1691 복사.webp","images/cosplay/주술회전 회옥옥절/KakaoTalk_20260318_192346169_04 복사.webp","images/cosplay/주술회전 회옥옥절/남캐즈 (3) 복사.webp"], "year":null, "position":{"x":780,"y":1270}, "visible":true, "link":"" },
+    { "id":"profile-01", "title":"Barber Profile", "category":"프로필", "thumbnail":"", "description":"", "photos":["images/profile/Barber Profile/_KJH4339.webp","images/profile/Barber Profile/_KJH4353.webp","images/profile/Barber Profile/_KJH4363.webp","images/profile/Barber Profile/_KJH4426.webp","images/profile/Barber Profile/_KJH4437.webp","images/profile/Barber Profile/_KJH4520.webp","images/profile/Barber Profile/_KJH4563.webp"], "year":null, "position":{"x":920,"y":1270}, "visible":true, "link":"" },
+    { "id":"profile-02", "title":"Barber Profile 2", "category":"프로필", "thumbnail":"", "description":"", "photos":["images/profile/Barber Profile 2/1.webp","images/profile/Barber Profile 2/2.webp","images/profile/Barber Profile 2/5.webp"], "year":null, "position":{"x":1060,"y":1270}, "visible":true, "link":"" },
+    { "id":"profile-03", "title":"Criminal", "category":"프로필", "thumbnail":"", "description":"", "photos":["images/profile/Criminal/_KJH8022.webp","images/profile/Criminal/_KJH8051.webp","images/profile/Criminal/_KJH8080.webp"], "year":null, "position":{"x":80,"y":1400}, "visible":true, "link":"" },
+    { "id":"profile-04", "title":"Dress", "category":"프로필", "thumbnail":"", "description":"", "photos":["images/profile/Dress/KJH_2525.webp","images/profile/Dress/KJH_2566.webp","images/profile/Dress/KJH_2593.webp"], "year":null, "position":{"x":220,"y":1400}, "visible":true, "link":"" },
+    { "id":"profile-05", "title":"Hwarang", "category":"프로필", "thumbnail":"", "description":"", "photos":["images/profile/Hwarang/_KJH0788.webp","images/profile/Hwarang/_KJH0833.webp","images/profile/Hwarang/_KJH0868.webp"], "year":null, "position":{"x":360,"y":1400}, "visible":true, "link":"" },
+    { "id":"profile-06", "title":"Jirai", "category":"프로필", "thumbnail":"", "description":"", "photos":["images/profile/Jirai/_KJH5336.webp","images/profile/Jirai/_KJH5422.webp","images/profile/Jirai/_KJH5468.webp","images/profile/Jirai/_KJH5470.webp","images/profile/Jirai/_KJH5507.webp","images/profile/Jirai/_KJH5597.webp"], "year":null, "position":{"x":500,"y":1400}, "visible":true, "link":"" },
+    { "id":"profile-07", "title":"Noir", "category":"프로필", "thumbnail":"", "description":"", "photos":["images/profile/Noir/_KJH1365.webp","images/profile/Noir/_KJH1403.webp","images/profile/Noir/_KJH1410.webp","images/profile/Noir/_KJH1432.webp"], "year":null, "position":{"x":640,"y":1400}, "visible":true, "link":"" },
+    { "id":"profile-08", "title":"Noir 2", "category":"프로필", "thumbnail":"", "description":"", "photos":["images/profile/Noir 2/_KJH1496.webp","images/profile/Noir 2/_KJH1568.webp","images/profile/Noir 2/_KJH1601.webp","images/profile/Noir 2/_KJH1660.webp","images/profile/Noir 2/_KJH1686.webp","images/profile/Noir 2/_KJH1697.webp"], "year":null, "position":{"x":780,"y":1400}, "visible":true, "link":"" },
+    { "id":"profile-09", "title":"Noir 3", "category":"프로필", "thumbnail":"", "description":"", "photos":["images/profile/Noir 3/1770025368410_보정 복사.webp","images/profile/Noir 3/_KJH2283.webp","images/profile/Noir 3/_KJH2314.webp","images/profile/Noir 3/_KJH2373.webp","images/profile/Noir 3/_KJH2422.webp"], "year":null, "position":{"x":920,"y":1400}, "visible":true, "link":"" },
+    { "id":"profile-10", "title":"Profile 1", "category":"프로필", "thumbnail":"", "description":"", "photos":["images/profile/Profile 1/_KJH0645.webp","images/profile/Profile 1/_KJH0716.webp","images/profile/Profile 1/_KJH0723.webp","images/profile/Profile 1/_KJH0763.webp","images/profile/Profile 1/_KJH0771.webp","images/profile/Profile 1/_KJH0830.webp","images/profile/Profile 1/_KJH0884.webp"], "year":null, "position":{"x":1060,"y":1400}, "visible":true, "link":"" },
+    { "id":"profile-11", "title":"Profile 2", "category":"프로필", "thumbnail":"", "description":"", "photos":["images/profile/Profile 2/_KJH1311.webp","images/profile/Profile 2/_KJH1343.webp","images/profile/Profile 2/_KJH1384.webp","images/profile/Profile 2/_KJH1416.webp"], "year":null, "position":{"x":80,"y":1530}, "visible":true, "link":"" },
+    { "id":"profile-12", "title":"Profile 3", "category":"프로필", "thumbnail":"", "description":"", "photos":["images/profile/Profile 3/_KJH2606.webp","images/profile/Profile 3/_KJH2640.webp","images/profile/Profile 3/_KJH2696.webp","images/profile/Profile 3/_KJH2723.webp","images/profile/Profile 3/_KJH2746.webp","images/profile/Profile 3/_KJH2790.webp","images/profile/Profile 3/_KJH2802.webp","images/profile/Profile 3/_KJH2945.webp","images/profile/Profile 3/_KJH3036.webp","images/profile/Profile 3/_KJH3100.webp"], "year":null, "position":{"x":220,"y":1530}, "visible":true, "link":"" }
   ],
-  categories: ["브랜딩", "광고", "포트레이트", "공간"]
+  "categories": ["브랜딩", "광고", "포트레이트", "공간", "스냅", "코스프레", "프로필"]
 };
 
 // localStorage에서 불러오기, 없으면 기본값
@@ -449,12 +515,30 @@ function loadData() {
 }
 
 // 변경될 때마다 localStorage에 자동 저장
+// (localStorage는 보통 5~10MB 한도라 사진을 base64로 많이 넣으면 초과될 수 있음 —
+//  실패해도 DATA는 메모리에 남아있으니 "JSON 복사"로 백업하도록 안내)
 function persistData() {
-  localStorage.setItem(DATA_KEY, JSON.stringify(DATA));
+  try {
+    localStorage.setItem(DATA_KEY, JSON.stringify(DATA));
+    return true;
+  } catch (err) {
+    console.error('persistData error:', err);
+    showToast('⚠️ 자동저장 용량 초과 — 지금 상태는 메모리엔 있음. "JSON 복사"로 바로 백업하세요', 5000);
+    return false;
+  }
 }
 
 let DATA = loadData();
 let editingId = null;
+
+// 브라우저에 저장된 편집 내용(localStorage)을 지우고 최신 DEFAULT_DATA를 다시 불러옴
+// (사진 폴더를 새로 스캔해서 admin.html/content.json을 갱신했을 때, 지금 열려있는 브라우저 세션이
+//  예전 localStorage 내용을 계속 보여주는 문제를 해결하기 위한 버튼)
+function resetToDefaults() {
+  if (!confirm('지금까지 편집 중이던 내용(저장 안 한 것 포함)을 지우고 최신 기본 데이터를 불러올까요?\n걱정되면 취소 후 먼저 "JSON 복사"로 백업하세요.')) return;
+  localStorage.removeItem(DATA_KEY);
+  location.reload();
+}
 
 /* ═══════════════════════════════════════════
    로그인
@@ -643,9 +727,36 @@ function removePhotoRow(i) {
   if (row) row.remove();
 }
 
-// 폴더 선택 → 그 안의 사진 파일을 전부 읽어서(Base64) 목록에 채움
+// 이미지 파일을 읽어서 최대 해상도/품질을 낮춰 base64로 반환
+// (원본 그대로 base64로 넣으면 사진 몇 장만으로 localStorage 용량(약 5~10MB)을 넘기기 쉬움)
+function compressImageFile(file, maxDim = 1600, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width >= height) { height = Math.round(height * maxDim / width); width = maxDim; }
+          else { width = Math.round(width * maxDim / height); height = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        // webp: 투명 배경(로고 등) 유지하면서 압축률도 좋음
+        resolve(canvas.toDataURL('image/webp', quality));
+      };
+      img.onerror = () => reject(new Error('이미지 디코딩 실패'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('파일 읽기 실패'));
+    reader.readAsDataURL(file);
+  });
+}
+
+// 폴더 선택 → 그 안의 사진 파일을 전부 읽어서(압축 후 Base64) 목록에 채움
 // (경로만 저장하면 실제 파일이 배포 위치에 없을 때 깨지므로, 파일 내용 자체를 읽어 저장한다)
-function onPhotoFolderPicked(input) {
+async function onPhotoFolderPicked(input) {
   const files = Array.from(input.files || []).filter(f => /\.(jpe?g|png|gif|webp|avif)$/i.test(f.name));
   if (!files.length) { showToast('❌ 폴더 안에 이미지 파일이 없습니다'); input.value = ''; return; }
 
@@ -654,28 +765,30 @@ function onPhotoFolderPicked(input) {
 
   const list = document.getElementById('photo-list');
   list.innerHTML = ''; // 폴더 내용 기준으로 목록을 새로 채움
-
-  let loaded = 0;
-  files.forEach((file, i) => {
+  files.forEach((_, i) => {
     const div = document.createElement('div');
     div.innerHTML = photoRowHTML('', i);
     list.appendChild(div.firstElementChild);
+  });
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const base64 = e.target.result;
+  let loaded = 0;
+  for (let i = 0; i < files.length; i++) {
+    try {
+      const compressed = await compressImageFile(files[i]);
       const pathInput = document.querySelector(`#photo-row-${i} .photo-src`);
-      if (pathInput) pathInput.value = base64;
+      if (pathInput) pathInput.value = compressed;
       const preview = document.getElementById('photo-preview-' + i);
       if (preview) {
         preview.classList.add('visible');
-        preview.innerHTML = `<img src="${base64}" alt="">`;
+        preview.innerHTML = `<img src="${compressed}" alt="">`;
       }
       loaded++;
-      if (loaded === files.length) showToast(`✅ ${files.length}장 자동 감지됨`);
-    };
-    reader.readAsDataURL(file);
-  });
+    } catch (err) {
+      console.error('폴더 사진 압축 실패:', err);
+      showToast(`❌ ${files[i].name} 처리 실패`);
+    }
+  }
+  if (loaded) showToast(`✅ ${loaded}/${files.length}장 자동 감지됨 (압축 적용)`);
 
   input.value = '';
 }
@@ -858,22 +971,22 @@ function pickPhoto(i) {
   document.getElementById('photo-file-' + i).click();
 }
 
-// 개별 사진 파일 선택됨 → Base64 변환 후 저장
-function onPhotoFilePicked(input, i) {
+// 개별 사진 파일 선택됨 → 압축 후 Base64로 저장
+async function onPhotoFilePicked(input, i) {
   if (!input.files[0]) return;
   const file = input.files[0];
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const base64 = e.target.result;
+  try {
+    const compressed = await compressImageFile(file);
     const pathInput = document.querySelector(`#photo-row-${i} .photo-src`);
-    if (pathInput) pathInput.value = base64;
+    if (pathInput) pathInput.value = compressed;
     const preview = document.getElementById('photo-preview-' + i);
     if (preview) {
       preview.classList.add('visible');
-      preview.innerHTML = `<img src="${base64}" alt="">`;
+      preview.innerHTML = `<img src="${compressed}" alt="">`;
     }
-  };
-  reader.readAsDataURL(file);
+  } catch (err) {
+    showToast('❌ 이미지 처리 실패: ' + err.message);
+  }
 }
 
 // 사진 경로 직접 입력 시 미리보기
@@ -890,32 +1003,38 @@ function updatePhotoPreview(i) {
   }
 }
 
-// 여러 장 한 번에 선택 → Base64 변환 후 저장
-function onMultiPhotoPicked(input) {
+// 여러 장 한 번에 선택 → 압축 후 Base64로 저장
+async function onMultiPhotoPicked(input) {
   if (!input.files.length) return;
   const list = document.getElementById('photo-list');
+  const files = Array.from(input.files);
+  input.value = '';
 
-  Array.from(input.files).forEach(file => {
-    const i = list.children.length;
+  const startIdx = list.children.length;
+  files.forEach((_, k) => {
     const div = document.createElement('div');
-    div.innerHTML = photoRowHTML('', i);
+    div.innerHTML = photoRowHTML('', startIdx + k);
     list.appendChild(div.firstElementChild);
+  });
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const base64 = e.target.result;
+  let loaded = 0;
+  for (let k = 0; k < files.length; k++) {
+    const i = startIdx + k;
+    try {
+      const compressed = await compressImageFile(files[k]);
       const pathInput = document.querySelector(`#photo-row-${i} .photo-src`);
-      if (pathInput) pathInput.value = base64;
+      if (pathInput) pathInput.value = compressed;
       const preview = document.getElementById('photo-preview-' + i);
       if (preview) {
         preview.classList.add('visible');
-        preview.innerHTML = `<img src="${base64}" alt="">`;
+        preview.innerHTML = `<img src="${compressed}" alt="">`;
       }
-    };
-    reader.readAsDataURL(file);
-  });
-
-  input.value = '';
+      loaded++;
+    } catch (err) {
+      console.error('사진 압축 실패:', err);
+    }
+  }
+  if (loaded) showToast(`✅ ${loaded}/${files.length}장 추가됨 (압축 적용)`);
 }
 
 /* ── Google Drive URL 변환 ── */
@@ -1164,17 +1283,17 @@ function esc(str) {
 }
 
 let toastTimer;
-function showToast(msg) {
+function showToast(msg, duration) {
   let t = document.getElementById('toast');
   if (!t) {
     t = document.createElement('div');
     t.id = 'toast';
-    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e3a5f;color:#93c5fd;border:1px solid #2563eb;border-radius:8px;padding:8px 18px;font-size:13px;z-index:999;transition:opacity 0.2s;';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e3a5f;color:#93c5fd;border:1px solid #2563eb;border-radius:8px;padding:8px 18px;font-size:13px;z-index:999;transition:opacity 0.2s;max-width:80vw;text-align:center;';
     document.body.appendChild(t);
   }
   t.textContent = msg; t.style.opacity = '1';
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.style.opacity = '0'; }, 2000);
+  toastTimer = setTimeout(() => { t.style.opacity = '0'; }, duration || 2000);
 }
 </script>
 </body>
