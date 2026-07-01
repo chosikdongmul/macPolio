@@ -548,11 +548,15 @@ function openEditPanel(id) {
       <input class="form-input" id="p-link" value="${esc(p.link||'')}" placeholder="https://behance.net/..." />
     </div>
     <div class="form-group">
-      <label class="form-label">사진 목록</label>
+      <label class="form-label">사진 목록
+        <span style="font-weight:400;color:#6b7280;font-size:11px;margin-left:6px;">images/ 폴더 안의 프로젝트 폴더를 선택하면 안의 사진이 전부 자동으로 채워집니다</span>
+      </label>
+      <input type="file" id="photo-folder-input" webkitdirectory multiple style="display:none" onchange="onPhotoFolderPicked(this)" />
+      <button class="add-photo-btn" style="border-color:#16a34a;color:#4ade80;font-weight:600;" onclick="document.getElementById('photo-folder-input').click()">📂 폴더 선택 (사진 자동 감지)</button>
       <div class="photo-list" id="photo-list">${photoRows}</div>
-      <button class="add-photo-btn" onclick="addPhotoRow()">+ 사진 추가</button>
+      <button class="add-photo-btn" onclick="addPhotoRow()">+ 사진 개별 추가 (고급)</button>
       <input type="file" id="photo-multi-input" accept="image/*" multiple style="display:none" onchange="onMultiPhotoPicked(this)" />
-      <button class="add-photo-btn" style="margin-top:4px;border-color:#2563eb;color:#4da3e8;" onclick="document.getElementById('photo-multi-input').click()">📁 파인더에서 여러 장 선택</button>
+      <button class="add-photo-btn" style="margin-top:4px;border-color:#2563eb;color:#4da3e8;" onclick="document.getElementById('photo-multi-input').click()">📁 파인더에서 여러 장 선택 (이미지 직접 첨부)</button>
     </div>
     <div class="form-group">
       <label class="form-label" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
@@ -598,6 +602,24 @@ function addPhotoRow() {
 function removePhotoRow(i) {
   const row = document.getElementById('photo-row-' + i);
   if (row) row.remove();
+}
+
+// 폴더 선택 → images/ 폴더 하위 경로 기준으로 그 안의 사진 파일을 전부 자동으로 목록에 채움
+function onPhotoFolderPicked(input) {
+  const files = Array.from(input.files || []).filter(f => /\.(jpe?g|png|gif|webp|avif)$/i.test(f.name));
+  if (!files.length) { showToast('❌ 폴더 안에 이미지 파일이 없습니다'); input.value = ''; return; }
+
+  // 자연 정렬 (01, 02 ... 10 순서로)
+  files.sort((a, b) => a.webkitRelativePath.localeCompare(b.webkitRelativePath, undefined, { numeric: true }));
+
+  // webkitRelativePath 예: "project-05/01.jpg" → images/ 접두사를 붙여 사이트 상대경로로 변환
+  const paths = files.map(f => 'images/' + f.webkitRelativePath);
+
+  const list = document.getElementById('photo-list');
+  list.innerHTML = paths.map((src, i) => photoRowHTML(src, i)).join('');
+
+  showToast(`✅ ${paths.length}장 자동 감지됨`);
+  input.value = '';
 }
 
 /* ── 파일 피커 ── */
