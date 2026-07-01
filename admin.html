@@ -161,6 +161,19 @@
     }
     .img-preview-box.empty::before { content: '미리보기'; }
 
+    /* 썸네일 크롭 모달 */
+    .crop-stage {
+      position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden;
+      background: #000; border-radius: 8px; border: 1px solid #333;
+      cursor: grab; touch-action: none;
+    }
+    .crop-stage.dragging { cursor: grabbing; }
+    .crop-stage img {
+      position: absolute; left: 0; top: 0; transform-origin: 0 0;
+      user-select: none; -webkit-user-drag: none; max-width: none; max-height: none;
+      pointer-events: none;
+    }
+
     /* 사진 경로 목록 */
     .photo-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
     .photo-row { display: flex; flex-direction: column; gap: 4px; padding: 8px; background: #1a1a1a; border: 1px solid #222; border-radius: 7px; }
@@ -355,6 +368,31 @@
     </div>
   </div>
 
+  <!-- 썸네일 크롭 모달 -->
+  <div id="crop-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;
+       align-items:center;justify-content:center;">
+    <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;width:560px;max-width:92vw;padding:22px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-size:15px;font-weight:700;color:#fff;">✂️ 썸네일 크롭
+          <span style="font-weight:400;color:#6b7280;font-size:11px;">16:9</span>
+        </div>
+        <button onclick="cancelCrop()" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer;">✕</button>
+      </div>
+      <div id="crop-stage" class="crop-stage"><img id="crop-img" alt="" /></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:14px;font-size:12px;color:#888;">
+        <span>축소</span>
+        <input type="range" id="crop-zoom" min="100" max="400" value="100" step="1"
+          oninput="onCropZoom(this.value)" style="flex:1;accent-color:#2563eb;">
+        <span>확대</span>
+      </div>
+      <div style="font-size:11px;color:#555;margin-top:8px;">이미지를 드래그해서 위치를 옮기고, 슬라이더로 확대·축소해서 원하는 부분을 프레임 안에 맞추세요.</div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px;">
+        <button class="btn btn-secondary" onclick="cancelCrop()">취소</button>
+        <button class="btn btn-primary" onclick="confirmCrop()">적용</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 하단 저장 바 -->
   <div id="save-bar">
     <div class="save-hint">자동저장(안전장치) 켜짐 · 명시적으로 저장하려면 <span>저장</span> 버튼 사용</div>
@@ -532,6 +570,7 @@ function openEditPanel(id) {
             oninput="updateThumbPreview()" />
           <button class="pick-btn" onclick="pickThumb()">📁 찾기</button>
           <button class="pick-btn" style="background:#1a73e8;border-color:#1a73e8;color:#fff;white-space:nowrap;" onclick="gdriveConvert('p-thumbnail', 'thumb-preview-box')">🔗 Drive</button>
+          <button class="pick-btn" style="background:#7c3aed;border-color:#7c3aed;color:#fff;white-space:nowrap;" onclick="openCropperFor('p-thumbnail','thumb-preview-box')">✂️ 크롭</button>
         </div>
         <div class="img-preview-box ${p.thumbnail ? '' : 'empty'}" id="thumb-preview-box">
           ${p.thumbnail ? `<img src="${esc(p.thumbnail)}" alt="">` : ''}
@@ -647,22 +686,16 @@ function pickThumb() {
   document.getElementById('thumb-file-input').click();
 }
 
-// 썸네일 파일 선택됨 → Base64 변환 후 저장
+// 썸네일 파일 선택됨 → Base64로 읽은 뒤 크롭 모달을 띄워서 위치/비율을 직접 정하게 함
 function onThumbFilePicked(input) {
   if (!input.files[0]) return;
   const file = input.files[0];
   const reader = new FileReader();
   reader.onload = function(e) {
-    const base64 = e.target.result;
-    // 경로 입력란에 base64 저장
-    const pathInput = document.getElementById('p-thumbnail');
-    pathInput.value = base64;
-    // 미리보기 업데이트
-    const box = document.getElementById('thumb-preview-box');
-    box.classList.remove('empty');
-    box.innerHTML = `<img src="${base64}" alt="">`;
+    openCropperFor('p-thumbnail', 'thumb-preview-box', e.target.result);
   };
   reader.readAsDataURL(file);
+  input.value = '';
 }
 
 // 썸네일 경로 직접 입력 시 미리보기 업데이트
@@ -676,6 +709,148 @@ function updateThumbPreview() {
     box.classList.add('empty');
     box.innerHTML = '';
   }
+}
+
+/* ═══════════════════════════════════════════
+   썸네일 크롭 모달
+   드래그로 위치, 슬라이더로 확대/축소해서
+   16:9 프레임 안에 원하는 부분을 맞춤
+   ═══════════════════════════════════════════ */
+let cropTarget = null;   // { inputId, previewId }
+let cropState = null;    // { scale, minScale, offsetX, offsetY, iw, ih, stageW, stageH }
+let cropDragging = false, cropDragStartX = 0, cropDragStartY = 0, cropStartOffX = 0, cropStartOffY = 0;
+let cropDragBound = false;
+
+function openCropperFor(inputId, previewId, srcOverride) {
+  const src = srcOverride || document.getElementById(inputId)?.value?.trim();
+  if (!src) { showToast('❌ 먼저 이미지를 선택하거나 경로를 입력하세요'); return; }
+
+  cropTarget = { inputId, previewId };
+  const modal = document.getElementById('crop-modal');
+  const stage = document.getElementById('crop-stage');
+  const img = document.getElementById('crop-img');
+
+  modal.style.display = 'flex';
+  bindCropDragOnce();
+
+  // data: URL은 CORS 문제가 없고, 외부 URL(Drive 등)은 시도는 하되 실패할 수 있음
+  if (!src.startsWith('data:')) img.crossOrigin = 'anonymous';
+  else img.removeAttribute('crossorigin');
+
+  img.onload = () => {
+    const rect = stage.getBoundingClientRect();
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    const minScale = Math.max(rect.width / iw, rect.height / ih);
+    cropState = {
+      scale: minScale, minScale,
+      offsetX: (rect.width  - iw * minScale) / 2,
+      offsetY: (rect.height - ih * minScale) / 2,
+      iw, ih, stageW: rect.width, stageH: rect.height
+    };
+    document.getElementById('crop-zoom').value = 100;
+    applyCropTransform();
+  };
+  img.onerror = () => {
+    showToast('❌ 이미지를 불러올 수 없습니다 (외부 링크의 브라우저 보안 제한일 수 있음)');
+    closeCropModal();
+  };
+  img.src = src;
+}
+
+function applyCropTransform() {
+  const img = document.getElementById('crop-img');
+  img.style.width  = (cropState.iw * cropState.scale) + 'px';
+  img.style.height = (cropState.ih * cropState.scale) + 'px';
+  img.style.transform = `translate(${cropState.offsetX}px, ${cropState.offsetY}px)`;
+}
+
+function clampCropOffset() {
+  const minX = cropState.stageW - cropState.iw * cropState.scale;
+  const minY = cropState.stageH - cropState.ih * cropState.scale;
+  cropState.offsetX = Math.min(0, Math.max(minX, cropState.offsetX));
+  cropState.offsetY = Math.min(0, Math.max(minY, cropState.offsetY));
+}
+
+function onCropZoom(val) {
+  if (!cropState) return;
+  const newScale = cropState.minScale * (val / 100);
+  const cx = cropState.stageW / 2, cy = cropState.stageH / 2;
+  // 확대/축소해도 화면 중앙이 가리키던 이미지 지점이 그대로 유지되도록 offset 보정
+  const imgX = (cx - cropState.offsetX) / cropState.scale;
+  const imgY = (cy - cropState.offsetY) / cropState.scale;
+  cropState.scale = newScale;
+  cropState.offsetX = cx - imgX * newScale;
+  cropState.offsetY = cy - imgY * newScale;
+  clampCropOffset();
+  applyCropTransform();
+}
+
+function bindCropDragOnce() {
+  if (cropDragBound) return;
+  cropDragBound = true;
+  const stage = document.getElementById('crop-stage');
+
+  stage.addEventListener('mousedown', e => {
+    if (!cropState) return;
+    cropDragging = true;
+    stage.classList.add('dragging');
+    cropDragStartX = e.clientX; cropDragStartY = e.clientY;
+    cropStartOffX = cropState.offsetX; cropStartOffY = cropState.offsetY;
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!cropDragging || !cropState) return;
+    cropState.offsetX = cropStartOffX + (e.clientX - cropDragStartX);
+    cropState.offsetY = cropStartOffY + (e.clientY - cropDragStartY);
+    clampCropOffset();
+    applyCropTransform();
+  });
+  window.addEventListener('mouseup', () => {
+    cropDragging = false;
+    stage.classList.remove('dragging');
+  });
+}
+
+function confirmCrop() {
+  if (!cropState || !cropTarget) return;
+  const img = document.getElementById('crop-img');
+  const OUT_W = 960, OUT_H = 540;
+  const canvas = document.createElement('canvas');
+  canvas.width = OUT_W; canvas.height = OUT_H;
+  const ctx = canvas.getContext('2d');
+
+  const sx = -cropState.offsetX / cropState.scale;
+  const sy = -cropState.offsetY / cropState.scale;
+  const sw = cropState.stageW / cropState.scale;
+  const sh = cropState.stageH / cropState.scale;
+
+  try {
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, OUT_W, OUT_H);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    const input = document.getElementById(cropTarget.inputId);
+    if (input) input.value = dataUrl;
+    if (cropTarget.inputId === 'p-thumbnail') {
+      updateThumbPreview();
+    } else {
+      const box = document.getElementById(cropTarget.previewId);
+      if (box) {
+        box.classList.add('visible'); box.classList.remove('empty');
+        box.innerHTML = `<img src="${dataUrl}" alt="">`;
+      }
+    }
+    closeCropModal();
+    showToast('✅ 크롭 적용됨');
+  } catch (err) {
+    showToast('❌ 크롭 실패 — 외부 이미지의 브라우저 보안 제한(CORS) 때문일 수 있습니다. 파일로 다시 선택해서 시도해주세요.');
+    console.error('confirmCrop error:', err);
+  }
+}
+
+function cancelCrop() { closeCropModal(); }
+
+function closeCropModal() {
+  document.getElementById('crop-modal').style.display = 'none';
+  cropTarget = null; cropState = null;
 }
 
 // 개별 사진 파일 피커 열기
