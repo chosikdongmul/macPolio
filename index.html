@@ -626,6 +626,9 @@
     <div class="settings-item" onclick="closeSettings(); openAppleGame();">
       <span class="si-icon">🍎</span> 사과게임
     </div>
+    <div class="settings-item" onclick="closeSettings(); openSpotDiff();">
+      <span class="si-icon">🔍</span> 틀린그림찾기
+    </div>
     <div class="settings-sep"></div>
     <div class="settings-label">테마</div>
     <div class="settings-item" id="theme-toggle-item" onclick="toggleTheme(); closeSettings();">
@@ -1650,9 +1653,9 @@ function minimizeWindow(id) {
   setTimeout(() => { el.style.display = 'none'; }, 320);
 
   // Dock에 미니 아이콘 추가
-  const SPECIAL_TITLES = { '__about__':'About Me', '__contact__':'Contact', '__breakout__':'Breakout', '__apple__':'사과게임' };
+  const SPECIAL_TITLES = { '__about__':'About Me', '__contact__':'Contact', '__breakout__':'Breakout', '__apple__':'사과게임', '__spotdiff__':'틀린그림찾기' };
   const project = CONTENT.projects.find(p => p.id === id) || { title: SPECIAL_TITLES[id] || id, thumbnail: '' };
-  const SPECIAL_EMOJI = { '__about__':'👤', '__contact__':'✉️', '__breakout__':'🕹️', '__apple__':'🍎' };
+  const SPECIAL_EMOJI = { '__about__':'👤', '__contact__':'✉️', '__breakout__':'🕹️', '__apple__':'🍎', '__spotdiff__':'🔍' };
   const emoji = project.thumbnail ? '' : (SPECIAL_EMOJI[id] || '🗂️');
   const label = project.title || id;
 
@@ -2696,6 +2699,340 @@ function initAppleGame(COLS, ROWS, CELL, PAD, CW, CH, TIME_LIMIT) {
   }
 
   reset();
+  loop();
+}
+
+/* ═══════════════════════════════════════════
+   틀린그림찾기
+   두 패널에 같은 도형들을 그리고 일부를 다르게 변형 →
+   차이가 있는 지점을 클릭해서 찾기
+   ═══════════════════════════════════════════ */
+function openSpotDiff() {
+  const id = '__spotdiff__';
+  if (windows[id]) { restoreWindow(id); return; }
+
+  const PAD = 14, GAP = 16;
+  const PANEL_W = 280, PANEL_H = 320;
+  const HUD_H = 52, GRID_TOP_GAP = 10;
+  const CW = PAD * 2 + PANEL_W * 2 + GAP;
+  const CH = HUD_H + GRID_TOP_GAP + PANEL_H + PAD;
+
+  const layer = document.getElementById('window-layer');
+  const win = document.createElement('div');
+  win.className = 'window';
+  win.id = 'win-' + id;
+  win.style.cssText = `
+    width:${CW+2}px; height:${CH+42}px;
+    left:${Math.max(20,(window.innerWidth-CW)/2)}px;
+    top:${Math.max(20,(window.innerHeight-CH-42)/2)}px;
+    z-index:${++topZ}; pointer-events:all;
+    border-radius:12px; overflow:hidden;
+  `;
+  win.innerHTML = `
+    <div class="window-titlebar" id="tb-${id}" style="cursor:move;">
+      <button class="traffic-btn btn-close" onclick="closeWindow('${id}')"></button>
+      <button class="traffic-btn btn-min"   onclick="minimizeWindow('${id}')"></button>
+      <button class="traffic-btn btn-max"   onclick="maximizeWindow('${id}')"></button>
+      <div class="window-title">틀린그림찾기</div>
+    </div>
+    <canvas id="spotdiff-canvas" width="${CW}" height="${CH}"
+      style="display:block;background:#12121a;cursor:crosshair;"></canvas>`;
+
+  win.addEventListener('mousedown', () => bringToFront(id));
+  makeWindowDraggable(win, id);
+  layer.appendChild(win);
+  windows[id] = { el: win, z: topZ };
+  initSpotDiff(PAD, GAP, PANEL_W, PANEL_H, HUD_H, GRID_TOP_GAP, CW, CH);
+}
+
+function initSpotDiff(PAD, GAP, PANEL_W, PANEL_H, HUD_H, GRID_TOP_GAP, CW, CH) {
+  const canvas = document.getElementById('spotdiff-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const GRID_TOP = HUD_H + GRID_TOP_GAP;
+  const LEFT_X = PAD, RIGHT_X = PAD + PANEL_W + GAP;
+  const GRID_COLS = 4, GRID_ROWS = 4;
+  const CELL_W = PANEL_W / GRID_COLS, CELL_H = PANEL_H / GRID_ROWS;
+  const EMPTY_CELLS = 3;
+  const HIT_R = 24;
+
+  const SHAPE_TYPES = ['circle', 'rect', 'triangle', 'star'];
+  const COLORS = ['#ff6b6b','#ff9f43','#ffd32a','#0be881','#0fbcf9','#cd84f1','#f53b57','#4dd0e1','#54a0ff'];
+
+  // ── 상태 ──
+  let round, totalScore, leftShapes, rightShapes, diffs, foundCount, timeLeft, timeLimit, state, lastTick, raf;
+  let missFx = [];
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function pickColor(exclude) {
+    let c;
+    do { c = COLORS[Math.floor(Math.random() * COLORS.length)]; } while (c === exclude);
+    return c;
+  }
+
+  function makeShape(cell) {
+    return {
+      x: cell.c * CELL_W + CELL_W / 2 + (Math.random() * 10 - 5),
+      y: cell.r * CELL_H + CELL_H / 2 + (Math.random() * 10 - 5),
+      type: SHAPE_TYPES[Math.floor(Math.random() * SHAPE_TYPES.length)],
+      size: 16 + Math.random() * 10,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      rot: Math.random() * Math.PI * 2,
+      hidden: false
+    };
+  }
+
+  function buildScene() {
+    const cells = [];
+    for (let r = 0; r < GRID_ROWS; r++)
+      for (let c = 0; c < GRID_COLS; c++) cells.push({ r, c });
+    shuffle(cells);
+    const chosenCount = cells.length - EMPTY_CELLS;
+    const chosen = cells.slice(0, chosenCount);
+    const empty = cells.slice(chosenCount);
+    const shapes = chosen.map(makeShape);
+    return { shapes, empty };
+  }
+
+  function buildDiffs(shapes, empty, count) {
+    const indices = shuffle(shapes.map((_, i) => i));
+    const list = [];
+    let addAvailable = empty.length > 0;
+    let i = 0;
+    while (list.length < count && i <= indices.length) {
+      if (addAvailable && list.length === count - 1) {
+        const cell = empty.pop();
+        const shape = makeShape(cell);
+        list.push({ type: 'add', idx: -1, cx: shape.x, cy: shape.y, shape, found: false });
+        addAvailable = false;
+        continue;
+      }
+      if (i >= indices.length) break;
+      const idx = indices[i++];
+      const shape = shapes[idx];
+      const opts = shape.type === 'circle' ? ['color', 'size', 'remove'] : ['color', 'size', 'remove', 'rotate'];
+      const type = opts[Math.floor(Math.random() * opts.length)];
+      list.push({ type, idx, cx: shape.x, cy: shape.y, found: false });
+    }
+    return list;
+  }
+
+  function applyDiffs(shapes, list) {
+    const clone = shapes.map(s => ({ ...s }));
+    list.forEach(d => {
+      if (d.type === 'add') { clone.push({ ...d.shape }); return; }
+      const s = clone[d.idx];
+      if (d.type === 'color')  s.color = pickColor(s.color);
+      else if (d.type === 'size')   s.size *= (Math.random() < 0.5 ? 0.55 : 1.7);
+      else if (d.type === 'rotate') s.rot += Math.PI / 2 + Math.random() * 0.6;
+      else if (d.type === 'remove') s.hidden = true;
+    });
+    return clone;
+  }
+
+  function reset(keepRound) {
+    if (!keepRound) { round = 1; totalScore = 0; }
+    const diffCount = Math.min(7, 5 + Math.floor((round - 1) / 2));
+    timeLimit = Math.max(50, 95 - (round - 1) * 5);
+    const scene = buildScene();
+    leftShapes = scene.shapes;
+    diffs = buildDiffs(leftShapes, scene.empty, diffCount);
+    rightShapes = applyDiffs(leftShapes, diffs);
+    foundCount = 0;
+    timeLeft = timeLimit;
+    state = 'playing';
+    lastTick = Date.now();
+    missFx = [];
+  }
+
+  // ── 그리기 ──
+  function drawStarPath(cx, cy, outerR, innerR, pts) {
+    ctx.beginPath();
+    for (let i = 0; i < pts * 2; i++) {
+      const r = i % 2 === 0 ? outerR : innerR;
+      const a = i * Math.PI / pts - Math.PI / 2;
+      const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+  }
+
+  function drawShape(offX, offY, s) {
+    if (s.hidden) return;
+    ctx.save();
+    ctx.translate(offX + s.x, offY + s.y);
+    ctx.rotate(s.rot);
+    ctx.fillStyle = s.color;
+    switch (s.type) {
+      case 'circle':
+        ctx.beginPath(); ctx.arc(0, 0, s.size / 2, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'rect':
+        ctx.fillRect(-s.size / 2, -s.size / 2, s.size, s.size);
+        break;
+      case 'triangle':
+        ctx.beginPath();
+        ctx.moveTo(0, -s.size / 2);
+        ctx.lineTo(s.size / 2, s.size / 2);
+        ctx.lineTo(-s.size / 2, s.size / 2);
+        ctx.closePath(); ctx.fill();
+        break;
+      case 'star':
+        drawStarPath(0, 0, s.size / 2, s.size / 4, 5);
+        ctx.fill();
+        break;
+    }
+    ctx.restore();
+  }
+
+  function drawPanel(offX) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(offX, GRID_TOP, PANEL_W, PANEL_H, 10);
+    ctx.fillStyle = '#1c1c26'; ctx.fill();
+    ctx.clip();
+    const list = offX === LEFT_X ? leftShapes : rightShapes;
+    list.forEach(s => drawShape(offX, GRID_TOP, s));
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(offX, GRID_TOP, PANEL_W, PANEL_H, 10); ctx.stroke();
+  }
+
+  function drawFoundMarkers() {
+    diffs.forEach(d => {
+      if (!d.found) return;
+      [LEFT_X, RIGHT_X].forEach(offX => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(offX + d.cx, GRID_TOP + d.cy, HIT_R * 0.8, 0, Math.PI * 2);
+        ctx.strokeStyle = '#30d158'; ctx.lineWidth = 2.5;
+        ctx.setLineDash([5, 4]);
+        ctx.stroke();
+        ctx.restore();
+      });
+    });
+  }
+
+  function drawMissFx() {
+    missFx.forEach(m => {
+      const t = m.age / 20;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, 1 - t);
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, 14 + t * 10, 0, Math.PI * 2);
+      ctx.strokeStyle = '#ff453a'; ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    });
+  }
+
+  function overlay(title, sub, color) {
+    ctx.fillStyle = 'rgba(0,0,0,0.65)'; ctx.fillRect(0, 0, CW, CH);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = 'bold 28px -apple-system, Inter, sans-serif';
+    ctx.fillStyle = color; ctx.fillText(title, CW / 2, CH / 2 - 26);
+    ctx.font = '13px -apple-system, Inter, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.fillText(sub, CW / 2, CH / 2 + 4);
+    const bw = 130, bh = 32, bx = CW / 2 - bw / 2, by = CH / 2 + 24;
+    ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 8);
+    ctx.fillStyle = color + '33'; ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = color; ctx.font = 'bold 13px -apple-system, Inter, sans-serif';
+    ctx.fillText(state === 'win' ? '다음 라운드' : '다시 시작', CW / 2, by + bh / 2 + 1);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, CW, CH);
+    ctx.fillStyle = '#12121a'; ctx.fillRect(0, 0, CW, CH);
+
+    // HUD
+    ctx.fillStyle = '#0d0d14'; ctx.fillRect(0, 0, CW, HUD_H);
+    ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(0, HUD_H - 1, CW, 1);
+
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#4dd0e1'; ctx.font = 'bold 16px -apple-system, Inter, sans-serif';
+    ctx.fillText(`ROUND ${round}`, PAD, HUD_H / 2 - 9);
+    ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = '11px -apple-system, Inter, sans-serif';
+    ctx.fillText(`SCORE ${totalScore}   찾음 ${foundCount}/${diffs.length}`, PAD, HUD_H / 2 + 10);
+
+    const barW = 130, barX = CW - PAD - barW, barY = HUD_H / 2 - 6;
+    ctx.fillStyle = '#22222e'; ctx.beginPath(); ctx.roundRect(barX, barY, barW, 12, 6); ctx.fill();
+    const ratio = Math.max(0, timeLeft / timeLimit);
+    const barColor = ratio > 0.5 ? '#30d158' : ratio > 0.25 ? '#ffd60a' : '#ff453a';
+    ctx.fillStyle = barColor; ctx.beginPath(); ctx.roundRect(barX, barY, barW * ratio, 12, 6); ctx.fill();
+    ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '10px -apple-system, Inter, sans-serif';
+    ctx.fillText(Math.ceil(timeLeft) + 's', barX + barW / 2, barY + 6);
+
+    drawPanel(LEFT_X);
+    drawPanel(RIGHT_X);
+    drawFoundMarkers();
+    drawMissFx();
+
+    if (state === 'win') overlay('CLEAR!', `Score +${diffs.length * 20 + Math.floor(timeLeft) * 2}  |  클릭하면 다음 라운드`, '#30d158');
+    else if (state === 'over') overlay('TIME OUT', `최종 점수: ${totalScore}점  |  클릭하면 처음부터`, '#ff453a');
+  }
+
+  // ── 클릭 ──
+  canvas.addEventListener('mousedown', e => {
+    if (state !== 'playing') { reset(state === 'win'); return; }
+    const rect = canvas.getBoundingClientRect();
+    const px = e.clientX - rect.left, py = e.clientY - rect.top;
+
+    let localX = null, localY = null;
+    if (px >= LEFT_X && px <= LEFT_X + PANEL_W && py >= GRID_TOP && py <= GRID_TOP + PANEL_H) {
+      localX = px - LEFT_X; localY = py - GRID_TOP;
+    } else if (px >= RIGHT_X && px <= RIGHT_X + PANEL_W && py >= GRID_TOP && py <= GRID_TOP + PANEL_H) {
+      localX = px - RIGHT_X; localY = py - GRID_TOP;
+    }
+    if (localX === null) return;
+
+    let hit = null;
+    for (const d of diffs) {
+      if (d.found) continue;
+      if (Math.hypot(localX - d.cx, localY - d.cy) <= HIT_R) { hit = d; break; }
+    }
+
+    if (hit) {
+      hit.found = true;
+      foundCount++;
+      totalScore += 20;
+      if (foundCount >= diffs.length) {
+        totalScore += Math.floor(timeLeft) * 2;
+        round++;
+        state = 'win';
+      }
+    } else {
+      missFx.push({ x: px, y: py, age: 0 });
+    }
+  });
+
+  // ── 업데이트 ──
+  function tick() {
+    if (state === 'playing') {
+      const now = Date.now();
+      timeLeft -= (now - lastTick) / 1000;
+      lastTick = now;
+      if (timeLeft <= 0) { timeLeft = 0; state = 'over'; }
+    }
+    missFx.forEach(m => m.age++);
+    missFx = missFx.filter(m => m.age < 20);
+  }
+
+  function loop() {
+    if (!document.getElementById('win-__spotdiff__')) return;
+    tick(); draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  reset(false);
   loop();
 }
 
