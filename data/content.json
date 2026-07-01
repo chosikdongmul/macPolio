@@ -1,11 +1,11 @@
 {
   "owner": {
-    "name": "홍길동",
-    "bio": "사진작가 / 비주얼 디렉터",
+    "name": "ON:YOU",
+    "bio": "경기도, 서울에서 사진을 찍어요.",
     "contact": {
-      "email": "hello@example.com",
-      "instagram": "https://instagram.com/username",
-      "behance": "https://behance.net/username"
+      "email": "assurance@Kakao.com",
+      "instagram": "-",
+      "behance": "-"
     }
   },
   "projects": [
@@ -1219,10 +1219,6 @@
     }
   ],
   "categories": [
-    "브랜딩",
-    "광고",
-    "포트레이트",
-    "공간",
     "스냅",
     "코스프레",
     "프로필"
