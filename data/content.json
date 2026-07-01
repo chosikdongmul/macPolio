@@ -1,11 +1,11 @@
 {
   "owner": {
     "name": "ON:YOU",
-    "bio": "사진작가 / 비주얼 디렉터",
+    "bio": "경기도, 서울에서 사진을 찍어요.",
     "contact": {
-      "email": "assurance@kakao.com",
-      "instagram": ".",
-      "behance": "."
+      "email": "assurance@Kakao.com",
+      "instagram": "-",
+      "behance": "-"
     }
   },
   "projects": [
@@ -100,10 +100,10 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/snap/서울/_KJH7633.webp",
-        "images/snap/서울/_KJH7642.webp",
-        "images/snap/서울/_KJH7715.webp",
-        "images/snap/서울/_KJH7812.webp"
+        "images/snap/서울/KJH7633.webp",
+        "images/snap/서울/KJH7642.webp",
+        "images/snap/서울/KJH7715.webp",
+        "images/snap/서울/KJH7812.webp"
       ],
       "year": null,
       "position": {
@@ -120,11 +120,11 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/snap/서울 식물원/_k1.webp",
-        "images/snap/서울 식물원/_KJH5722.webp",
-        "images/snap/서울 식물원/_KJH5852.webp",
-        "images/snap/서울 식물원/_KJH5922.webp",
-        "images/snap/서울 식물원/_KJH5944.webp"
+        "images/snap/서울 식물원/k1.webp",
+        "images/snap/서울 식물원/KJH5722.webp",
+        "images/snap/서울 식물원/KJH5852.webp",
+        "images/snap/서울 식물원/KJH5922.webp",
+        "images/snap/서울 식물원/KJH5944.webp"
       ],
       "year": null,
       "position": {
@@ -165,13 +165,13 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/snap/양재 가을/_KJH5722.webp",
-        "images/snap/양재 가을/_KJH5758.webp",
-        "images/snap/양재 가을/_KJH5769.webp",
-        "images/snap/양재 가을/_KJH5786.webp",
-        "images/snap/양재 가을/_KJH5789.webp",
-        "images/snap/양재 가을/_KJH5800.webp",
-        "images/snap/양재 가을/_KJH5811.webp"
+        "images/snap/양재 가을/KJH5722.webp",
+        "images/snap/양재 가을/KJH5758.webp",
+        "images/snap/양재 가을/KJH5769.webp",
+        "images/snap/양재 가을/KJH5786.webp",
+        "images/snap/양재 가을/KJH5789.webp",
+        "images/snap/양재 가을/KJH5800.webp",
+        "images/snap/양재 가을/KJH5811.webp"
       ],
       "year": null,
       "position": {
@@ -188,12 +188,12 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/snap/양재 가을2/_KJH6295.webp",
-        "images/snap/양재 가을2/_KJH6304.webp",
-        "images/snap/양재 가을2/_KJH6345.webp",
-        "images/snap/양재 가을2/_KJH6389.webp",
-        "images/snap/양재 가을2/_KJH6410.webp",
-        "images/snap/양재 가을2/_KJH6476.webp"
+        "images/snap/양재 가을2/KJH6295.webp",
+        "images/snap/양재 가을2/KJH6304.webp",
+        "images/snap/양재 가을2/KJH6345.webp",
+        "images/snap/양재 가을2/KJH6389.webp",
+        "images/snap/양재 가을2/KJH6410.webp",
+        "images/snap/양재 가을2/KJH6476.webp"
       ],
       "year": null,
       "position": {
@@ -210,8 +210,8 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/snap/양재 벚꽃1/_KJH4104.webp",
-        "images/snap/양재 벚꽃1/_KJH4140.webp"
+        "images/snap/양재 벚꽃1/KJH4104.webp",
+        "images/snap/양재 벚꽃1/KJH4140.webp"
       ],
       "year": null,
       "position": {
@@ -228,12 +228,12 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/snap/양재 벚꽃2/_KJH8013.webp",
-        "images/snap/양재 벚꽃2/_KJH8029.webp",
-        "images/snap/양재 벚꽃2/_KJH8090.webp",
-        "images/snap/양재 벚꽃2/_KJH8149.webp",
-        "images/snap/양재 벚꽃2/_KJH8169.webp",
-        "images/snap/양재 벚꽃2/_KJH8201.webp"
+        "images/snap/양재 벚꽃2/KJH8013.webp",
+        "images/snap/양재 벚꽃2/KJH8029.webp",
+        "images/snap/양재 벚꽃2/KJH8090.webp",
+        "images/snap/양재 벚꽃2/KJH8149.webp",
+        "images/snap/양재 벚꽃2/KJH8169.webp",
+        "images/snap/양재 벚꽃2/KJH8201.webp"
       ],
       "year": null,
       "position": {
@@ -272,12 +272,12 @@
       "description": "",
       "photos": [
         "images/snap/월간 포카리/1.webp",
-        "images/snap/월간 포카리/_KJH8579.webp",
-        "images/snap/월간 포카리/_KJH8627.webp",
-        "images/snap/월간 포카리/_KJH8681.webp",
-        "images/snap/월간 포카리/_KJH8704.webp",
-        "images/snap/월간 포카리/_KJH8728.webp",
-        "images/snap/월간 포카리/_KJH8739.webp"
+        "images/snap/월간 포카리/KJH8579.webp",
+        "images/snap/월간 포카리/KJH8627.webp",
+        "images/snap/월간 포카리/KJH8681.webp",
+        "images/snap/월간 포카리/KJH8704.webp",
+        "images/snap/월간 포카리/KJH8728.webp",
+        "images/snap/월간 포카리/KJH8739.webp"
       ],
       "year": null,
       "position": {
@@ -294,12 +294,12 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/snap/이태원/_KJH7338 복사.webp",
-        "images/snap/이태원/_KJH7339.webp",
-        "images/snap/이태원/_KJH7341.webp",
-        "images/snap/이태원/_KJH7522.webp",
-        "images/snap/이태원/_KJH7583.webp",
-        "images/snap/이태원/_KJH7604.webp"
+        "images/snap/이태원/KJH7338 복사.webp",
+        "images/snap/이태원/KJH7339.webp",
+        "images/snap/이태원/KJH7341.webp",
+        "images/snap/이태원/KJH7522.webp",
+        "images/snap/이태원/KJH7583.webp",
+        "images/snap/이태원/KJH7604.webp"
       ],
       "year": null,
       "position": {
@@ -316,9 +316,9 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/snap/정독도서관/_KJH0148.webp",
-        "images/snap/정독도서관/_KJH0155.webp",
-        "images/snap/정독도서관/_KJH0195.webp"
+        "images/snap/정독도서관/KJH0148.webp",
+        "images/snap/정독도서관/KJH0155.webp",
+        "images/snap/정독도서관/KJH0195.webp"
       ],
       "year": null,
       "position": {
@@ -335,13 +335,13 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/snap/종로1/_KJH5700.webp",
-        "images/snap/종로1/_KJH5709.webp",
-        "images/snap/종로1/_KJH5829.webp",
-        "images/snap/종로1/_KJH5854 (2).webp",
-        "images/snap/종로1/_KJH5951.webp",
-        "images/snap/종로1/_KJH6001.webp",
-        "images/snap/종로1/_KJH6047.webp"
+        "images/snap/종로1/KJH5700.webp",
+        "images/snap/종로1/KJH5709.webp",
+        "images/snap/종로1/KJH5829.webp",
+        "images/snap/종로1/KJH5854 (2).webp",
+        "images/snap/종로1/KJH5951.webp",
+        "images/snap/종로1/KJH6001.webp",
+        "images/snap/종로1/KJH6047.webp"
       ],
       "year": null,
       "position": {
@@ -380,7 +380,7 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/snap/하늘공원2/_KJH8977.webp",
+        "images/snap/하늘공원2/KJH8977.webp",
         "images/snap/하늘공원2/PSX_20250623_093338.webp",
         "images/snap/하늘공원2/PSX_20250623_094010.webp",
         "images/snap/하늘공원2/굿.webp"
@@ -400,10 +400,10 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/snap/하늘공원3/_KJH3507.webp",
-        "images/snap/하늘공원3/_KJH3545.webp",
-        "images/snap/하늘공원3/_KJH3856.webp",
-        "images/snap/하늘공원3/_KJH3916.webp"
+        "images/snap/하늘공원3/KJH3507.webp",
+        "images/snap/하늘공원3/KJH3545.webp",
+        "images/snap/하늘공원3/KJH3856.webp",
+        "images/snap/하늘공원3/KJH3916.webp"
       ],
       "year": null,
       "position": {
@@ -420,13 +420,13 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/snap/하늘공원4/_KJH4217.webp",
-        "images/snap/하늘공원4/_KJH4360.webp",
-        "images/snap/하늘공원4/_KJH4478.webp",
-        "images/snap/하늘공원4/_KJH4486.webp",
-        "images/snap/하늘공원4/_KJH4571.webp",
-        "images/snap/하늘공원4/_KJH4645.webp",
-        "images/snap/하늘공원4/_KJH4696.webp"
+        "images/snap/하늘공원4/KJH4217.webp",
+        "images/snap/하늘공원4/KJH4360.webp",
+        "images/snap/하늘공원4/KJH4478.webp",
+        "images/snap/하늘공원4/KJH4486.webp",
+        "images/snap/하늘공원4/KJH4571.webp",
+        "images/snap/하늘공원4/KJH4645.webp",
+        "images/snap/하늘공원4/KJH4696.webp"
       ],
       "year": null,
       "position": {
@@ -443,10 +443,10 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/snap/해방촌/_KJH1133.webp",
-        "images/snap/해방촌/_KJH1141.webp",
-        "images/snap/해방촌/_KJH1165.webp",
-        "images/snap/해방촌/_KJH1180.webp"
+        "images/snap/해방촌/KJH1133.webp",
+        "images/snap/해방촌/KJH1141.webp",
+        "images/snap/해방촌/KJH1165.webp",
+        "images/snap/해방촌/KJH1180.webp"
       ],
       "year": null,
       "position": {
@@ -504,8 +504,8 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/cosplay/25.10 서울 코믹월드/_KJH4967.webp",
-        "images/cosplay/25.10 서울 코믹월드/_KJH5114.webp",
+        "images/cosplay/25.10 서울 코믹월드/KJH4967.webp",
+        "images/cosplay/25.10 서울 코믹월드/KJH5114.webp",
         "images/cosplay/25.10 서울 코믹월드/소울3.webp",
         "images/cosplay/25.10 서울 코믹월드/오들님_소울마카01.webp",
         "images/cosplay/25.10 서울 코믹월드/오들님_소울마카06.webp"
@@ -525,9 +525,9 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/cosplay/25.12 AGF/_KJH8142 복사 2.webp",
-        "images/cosplay/25.12 AGF/_KJH8147 복사 2.webp",
-        "images/cosplay/25.12 AGF/_KJH8195 복사2.webp"
+        "images/cosplay/25.12 AGF/KJH8142 복사 2.webp",
+        "images/cosplay/25.12 AGF/KJH8147 복사 2.webp",
+        "images/cosplay/25.12 AGF/KJH8195 복사2.webp"
       ],
       "year": 2025,
       "position": {
@@ -604,11 +604,11 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/cosplay/FGO 레오니다스/_KJH2611 복사.webp",
-        "images/cosplay/FGO 레오니다스/_KJH2631 복사.webp",
-        "images/cosplay/FGO 레오니다스/_KJH2641 복사.webp",
-        "images/cosplay/FGO 레오니다스/_KJH2653 복사.webp",
-        "images/cosplay/FGO 레오니다스/_KJH2664 복사 2.webp"
+        "images/cosplay/FGO 레오니다스/KJH2611 복사.webp",
+        "images/cosplay/FGO 레오니다스/KJH2631 복사.webp",
+        "images/cosplay/FGO 레오니다스/KJH2641 복사.webp",
+        "images/cosplay/FGO 레오니다스/KJH2653 복사.webp",
+        "images/cosplay/FGO 레오니다스/KJH2664 복사 2.webp"
       ],
       "year": null,
       "position": {
@@ -625,7 +625,7 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/cosplay/가을 프리렌/_KJH6032.webp",
+        "images/cosplay/가을 프리렌/KJH6032.webp",
         "images/cosplay/가을 프리렌/MEITU_20251114_005528295.webp",
         "images/cosplay/가을 프리렌/MEITU_20251114_131744610.webp",
         "images/cosplay/가을 프리렌/MEITU_20251115_233850122.webp"
@@ -666,7 +666,7 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/cosplay/강릉 미쿠/_KJH3234.webp",
+        "images/cosplay/강릉 미쿠/KJH3234.webp",
         "images/cosplay/강릉 미쿠/KakaoTalk_20260215_004706405.webp",
         "images/cosplay/강릉 미쿠/KakaoTalk_20260215_004706405_01.webp",
         "images/cosplay/강릉 미쿠/KakaoTalk_20260309_225657301.webp"
@@ -686,10 +686,10 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/cosplay/던전밥/_KJH1703.webp",
-        "images/cosplay/던전밥/_KJH1814.webp",
-        "images/cosplay/던전밥/_KJH2050.webp",
-        "images/cosplay/던전밥/_KJH2062.webp"
+        "images/cosplay/던전밥/KJH1703.webp",
+        "images/cosplay/던전밥/KJH1814.webp",
+        "images/cosplay/던전밥/KJH2050.webp",
+        "images/cosplay/던전밥/KJH2062.webp"
       ],
       "year": null,
       "position": {
@@ -766,11 +766,11 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/cosplay/바람의 검심/_KJH2936.webp",
-        "images/cosplay/바람의 검심/_KJH2939.webp",
-        "images/cosplay/바람의 검심/_KJH2954.webp",
-        "images/cosplay/바람의 검심/_KJH3008.webp",
-        "images/cosplay/바람의 검심/_KJH3027.webp"
+        "images/cosplay/바람의 검심/KJH2936.webp",
+        "images/cosplay/바람의 검심/KJH2939.webp",
+        "images/cosplay/바람의 검심/KJH2954.webp",
+        "images/cosplay/바람의 검심/KJH3008.webp",
+        "images/cosplay/바람의 검심/KJH3027.webp"
       ],
       "year": null,
       "position": {
@@ -812,10 +812,10 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/cosplay/브라이어/_KJH7034.webp",
-        "images/cosplay/브라이어/_KJH7050.webp",
-        "images/cosplay/브라이어/_KJH7065.webp",
-        "images/cosplay/브라이어/_KJH7091.webp"
+        "images/cosplay/브라이어/KJH7034.webp",
+        "images/cosplay/브라이어/KJH7050.webp",
+        "images/cosplay/브라이어/KJH7065.webp",
+        "images/cosplay/브라이어/KJH7091.webp"
       ],
       "year": null,
       "position": {
@@ -849,8 +849,8 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/cosplay/블리치 유하바하/_KJH3337.webp",
-        "images/cosplay/블리치 유하바하/_KJH3341.webp"
+        "images/cosplay/블리치 유하바하/KJH3337.webp",
+        "images/cosplay/블리치 유하바하/KJH3341.webp"
       ],
       "year": null,
       "position": {
@@ -971,13 +971,13 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/profile/Barber Profile/_KJH4339.webp",
-        "images/profile/Barber Profile/_KJH4353.webp",
-        "images/profile/Barber Profile/_KJH4363.webp",
-        "images/profile/Barber Profile/_KJH4426.webp",
-        "images/profile/Barber Profile/_KJH4437.webp",
-        "images/profile/Barber Profile/_KJH4520.webp",
-        "images/profile/Barber Profile/_KJH4563.webp"
+        "images/profile/Barber Profile/KJH4339.webp",
+        "images/profile/Barber Profile/KJH4353.webp",
+        "images/profile/Barber Profile/KJH4363.webp",
+        "images/profile/Barber Profile/KJH4426.webp",
+        "images/profile/Barber Profile/KJH4437.webp",
+        "images/profile/Barber Profile/KJH4520.webp",
+        "images/profile/Barber Profile/KJH4563.webp"
       ],
       "year": null,
       "position": {
@@ -1013,9 +1013,9 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/profile/Criminal/_KJH8022.webp",
-        "images/profile/Criminal/_KJH8051.webp",
-        "images/profile/Criminal/_KJH8080.webp"
+        "images/profile/Criminal/KJH8022.webp",
+        "images/profile/Criminal/KJH8051.webp",
+        "images/profile/Criminal/KJH8080.webp"
       ],
       "year": null,
       "position": {
@@ -1051,9 +1051,9 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/profile/Hwarang/_KJH0788.webp",
-        "images/profile/Hwarang/_KJH0833.webp",
-        "images/profile/Hwarang/_KJH0868.webp"
+        "images/profile/Hwarang/KJH0788.webp",
+        "images/profile/Hwarang/KJH0833.webp",
+        "images/profile/Hwarang/KJH0868.webp"
       ],
       "year": null,
       "position": {
@@ -1070,12 +1070,12 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/profile/Jirai/_KJH5336.webp",
-        "images/profile/Jirai/_KJH5422.webp",
-        "images/profile/Jirai/_KJH5468.webp",
-        "images/profile/Jirai/_KJH5470.webp",
-        "images/profile/Jirai/_KJH5507.webp",
-        "images/profile/Jirai/_KJH5597.webp"
+        "images/profile/Jirai/KJH5336.webp",
+        "images/profile/Jirai/KJH5422.webp",
+        "images/profile/Jirai/KJH5468.webp",
+        "images/profile/Jirai/KJH5470.webp",
+        "images/profile/Jirai/KJH5507.webp",
+        "images/profile/Jirai/KJH5597.webp"
       ],
       "year": null,
       "position": {
@@ -1092,10 +1092,10 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/profile/Noir/_KJH1365.webp",
-        "images/profile/Noir/_KJH1403.webp",
-        "images/profile/Noir/_KJH1410.webp",
-        "images/profile/Noir/_KJH1432.webp"
+        "images/profile/Noir/KJH1365.webp",
+        "images/profile/Noir/KJH1403.webp",
+        "images/profile/Noir/KJH1410.webp",
+        "images/profile/Noir/KJH1432.webp"
       ],
       "year": null,
       "position": {
@@ -1112,12 +1112,12 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/profile/Noir 2/_KJH1496.webp",
-        "images/profile/Noir 2/_KJH1568.webp",
-        "images/profile/Noir 2/_KJH1601.webp",
-        "images/profile/Noir 2/_KJH1660.webp",
-        "images/profile/Noir 2/_KJH1686.webp",
-        "images/profile/Noir 2/_KJH1697.webp"
+        "images/profile/Noir 2/KJH1496.webp",
+        "images/profile/Noir 2/KJH1568.webp",
+        "images/profile/Noir 2/KJH1601.webp",
+        "images/profile/Noir 2/KJH1660.webp",
+        "images/profile/Noir 2/KJH1686.webp",
+        "images/profile/Noir 2/KJH1697.webp"
       ],
       "year": null,
       "position": {
@@ -1135,10 +1135,10 @@
       "description": "",
       "photos": [
         "images/profile/Noir 3/1770025368410_보정 복사.webp",
-        "images/profile/Noir 3/_KJH2283.webp",
-        "images/profile/Noir 3/_KJH2314.webp",
-        "images/profile/Noir 3/_KJH2373.webp",
-        "images/profile/Noir 3/_KJH2422.webp"
+        "images/profile/Noir 3/KJH2283.webp",
+        "images/profile/Noir 3/KJH2314.webp",
+        "images/profile/Noir 3/KJH2373.webp",
+        "images/profile/Noir 3/KJH2422.webp"
       ],
       "year": null,
       "position": {
@@ -1155,13 +1155,13 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/profile/Profile 1/_KJH0645.webp",
-        "images/profile/Profile 1/_KJH0716.webp",
-        "images/profile/Profile 1/_KJH0723.webp",
-        "images/profile/Profile 1/_KJH0763.webp",
-        "images/profile/Profile 1/_KJH0771.webp",
-        "images/profile/Profile 1/_KJH0830.webp",
-        "images/profile/Profile 1/_KJH0884.webp"
+        "images/profile/Profile 1/KJH0645.webp",
+        "images/profile/Profile 1/KJH0716.webp",
+        "images/profile/Profile 1/KJH0723.webp",
+        "images/profile/Profile 1/KJH0763.webp",
+        "images/profile/Profile 1/KJH0771.webp",
+        "images/profile/Profile 1/KJH0830.webp",
+        "images/profile/Profile 1/KJH0884.webp"
       ],
       "year": null,
       "position": {
@@ -1178,10 +1178,10 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/profile/Profile 2/_KJH1311.webp",
-        "images/profile/Profile 2/_KJH1343.webp",
-        "images/profile/Profile 2/_KJH1384.webp",
-        "images/profile/Profile 2/_KJH1416.webp"
+        "images/profile/Profile 2/KJH1311.webp",
+        "images/profile/Profile 2/KJH1343.webp",
+        "images/profile/Profile 2/KJH1384.webp",
+        "images/profile/Profile 2/KJH1416.webp"
       ],
       "year": null,
       "position": {
@@ -1198,16 +1198,16 @@
       "thumbnail": "",
       "description": "",
       "photos": [
-        "images/profile/Profile 3/_KJH2606.webp",
-        "images/profile/Profile 3/_KJH2640.webp",
-        "images/profile/Profile 3/_KJH2696.webp",
-        "images/profile/Profile 3/_KJH2723.webp",
-        "images/profile/Profile 3/_KJH2746.webp",
-        "images/profile/Profile 3/_KJH2790.webp",
-        "images/profile/Profile 3/_KJH2802.webp",
-        "images/profile/Profile 3/_KJH2945.webp",
-        "images/profile/Profile 3/_KJH3036.webp",
-        "images/profile/Profile 3/_KJH3100.webp"
+        "images/profile/Profile 3/KJH2606.webp",
+        "images/profile/Profile 3/KJH2640.webp",
+        "images/profile/Profile 3/KJH2696.webp",
+        "images/profile/Profile 3/KJH2723.webp",
+        "images/profile/Profile 3/KJH2746.webp",
+        "images/profile/Profile 3/KJH2790.webp",
+        "images/profile/Profile 3/KJH2802.webp",
+        "images/profile/Profile 3/KJH2945.webp",
+        "images/profile/Profile 3/KJH3036.webp",
+        "images/profile/Profile 3/KJH3100.webp"
       ],
       "year": null,
       "position": {
@@ -1219,6 +1219,10 @@
     }
   ],
   "categories": [
+    "브랜딩",
+    "광고",
+    "포트레이트",
+    "공간",
     "스냅",
     "코스프레",
     "프로필"
