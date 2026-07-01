@@ -549,7 +549,7 @@ function openEditPanel(id) {
     </div>
     <div class="form-group">
       <label class="form-label">사진 목록
-        <span style="font-weight:400;color:#6b7280;font-size:11px;margin-left:6px;">images/ 폴더 안의 프로젝트 폴더를 선택하면 안의 사진이 전부 자동으로 채워집니다</span>
+        <span style="font-weight:400;color:#6b7280;font-size:11px;margin-left:6px;">아무 폴더나 선택하면 안의 사진이 전부 자동으로 채워집니다 (내용을 직접 읽어서 저장하므로 폴더 위치는 상관없음)</span>
       </label>
       <input type="file" id="photo-folder-input" webkitdirectory multiple style="display:none" onchange="onPhotoFolderPicked(this)" />
       <button class="add-photo-btn" style="border-color:#16a34a;color:#4ade80;font-weight:600;" onclick="document.getElementById('photo-folder-input').click()">📂 폴더 선택 (사진 자동 감지)</button>
@@ -604,7 +604,8 @@ function removePhotoRow(i) {
   if (row) row.remove();
 }
 
-// 폴더 선택 → images/ 폴더 하위 경로 기준으로 그 안의 사진 파일을 전부 자동으로 목록에 채움
+// 폴더 선택 → 그 안의 사진 파일을 전부 읽어서(Base64) 목록에 채움
+// (경로만 저장하면 실제 파일이 배포 위치에 없을 때 깨지므로, 파일 내용 자체를 읽어 저장한다)
 function onPhotoFolderPicked(input) {
   const files = Array.from(input.files || []).filter(f => /\.(jpe?g|png|gif|webp|avif)$/i.test(f.name));
   if (!files.length) { showToast('❌ 폴더 안에 이미지 파일이 없습니다'); input.value = ''; return; }
@@ -612,13 +613,31 @@ function onPhotoFolderPicked(input) {
   // 자연 정렬 (01, 02 ... 10 순서로)
   files.sort((a, b) => a.webkitRelativePath.localeCompare(b.webkitRelativePath, undefined, { numeric: true }));
 
-  // webkitRelativePath 예: "project-05/01.jpg" → images/ 접두사를 붙여 사이트 상대경로로 변환
-  const paths = files.map(f => 'images/' + f.webkitRelativePath);
-
   const list = document.getElementById('photo-list');
-  list.innerHTML = paths.map((src, i) => photoRowHTML(src, i)).join('');
+  list.innerHTML = ''; // 폴더 내용 기준으로 목록을 새로 채움
 
-  showToast(`✅ ${paths.length}장 자동 감지됨`);
+  let loaded = 0;
+  files.forEach((file, i) => {
+    const div = document.createElement('div');
+    div.innerHTML = photoRowHTML('', i);
+    list.appendChild(div.firstElementChild);
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const base64 = e.target.result;
+      const pathInput = document.querySelector(`#photo-row-${i} .photo-src`);
+      if (pathInput) pathInput.value = base64;
+      const preview = document.getElementById('photo-preview-' + i);
+      if (preview) {
+        preview.classList.add('visible');
+        preview.innerHTML = `<img src="${base64}" alt="">`;
+      }
+      loaded++;
+      if (loaded === files.length) showToast(`✅ ${files.length}장 자동 감지됨`);
+    };
+    reader.readAsDataURL(file);
+  });
+
   input.value = '';
 }
 
